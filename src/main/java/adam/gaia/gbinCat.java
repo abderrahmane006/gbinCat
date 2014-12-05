@@ -8,6 +8,8 @@ package adam.gaia;
 // https://github.com/alexholmes/hdfs-file-slurper/blob/master/src/main/java/com/alexholmes/hdfsslurper/Slurper.java
 
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Charge un ensemble de fichiers gbin dans un fichier texte stocké dans HDFS.
@@ -19,6 +21,11 @@ public enum gbinCat {
     ENVIRONMENT;
 
     /**
+     * Journal.
+     */
+    private static final Logger logger = LoggerFactory.getLogger(gbinCat.class);
+
+    /**
      * Configuration du programme
      */
     private GbinCatConf config = new GbinCatConf();
@@ -28,12 +35,16 @@ public enum gbinCat {
      * @param args command line arguments
      */
     public void run(final String... args) throws ParseException {
+        logger.info("Start of the execution");
         try {
+            logger.info("Parse command line");
             config.parse(args);
         } catch (ParseException e) {
+            logger.debug("Could not parse command line args: " + e.getMessage());
             System.err.println("Could not parse command line args: " + e.getMessage());
             config.printUsage();
         }
+        logger.info("End of the execution");
     }
 
     /**
