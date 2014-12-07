@@ -73,7 +73,7 @@
                         <index>true</index>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>adam.gaia.gbinCat</mainClass>
+                            <mainClass>adam.gaia.GbinCat</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

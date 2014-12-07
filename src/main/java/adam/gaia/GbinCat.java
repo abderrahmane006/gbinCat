@@ -8,10 +8,10 @@ package adam.gaia;
 // https://github.com/alexholmes/hdfs-file-slurper/blob/master/src/main/java/com/alexholmes/hdfsslurper/Slurper.java
 
 import gaia.cu1.tools.exception.GaiaException;
-import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
 // WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
 // import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
+import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,18 +26,23 @@ import java.nio.file.Path;
  * @author hal
  * @version 12/2014
  */
-public enum gbinCat {
+public enum GbinCat {
     ENVIRONMENT;
+
+    /**
+     * Types de fichiers gbin.
+     */
+    public static enum GbinType { IGSL, GOG; }
 
     /**
      * Journal.
      */
-    private static final Logger logger = LoggerFactory.getLogger(gbinCat.class);
+    private static final Logger logger = LoggerFactory.getLogger(GbinCat.class);
 
     /**
      * Configuration du programme
      */
-    private GbinCatConf config = new GbinCatConf();
+    GbinCatConf config = new GbinCatConf(); // TODO : private
 
     /*
      * Main method of the program.
@@ -72,16 +77,22 @@ public enum gbinCat {
         logger.trace(gbinFinder.getGbinFiles().toString());
 
         logger.info("Traitement des fichiers gbin");
+        Class sourceClass = config.getGbinType() == GbinType.IGSL ? IgslSource.class : CatalogueSource.class;
         for (Path file : gbinFinder.getGbinFiles()) {
-            logger.info("Traitement du fichiers {}", file);
+            logger.info("Traitement du fichier {}", file);
+            Object[] data = null;
             try {
-                GbinLoader<IgslSource> gbinLoader = new GbinLoader<>(IgslSource.class); // TODO : doit dépendre du type de source => argument de ligne de commande
-                IgslSource[] data = gbinLoader.loadData(file);
-                System.out.println("alpha = " + data[0].getAlpha() + ", delta = " + data[0].getDelta());
+                GbinLoader gbinLoader = new GbinLoader(sourceClass);
+                data = gbinLoader.loadData(file);
             } catch (GaiaException e) {
                 logger.error("Erreur lors du chargement du fichier gbin {} : {}", file, e.getMessage());
                 System.err.println("Erreur lors du chargement du fichier gbin " + file + " : " + e.getMessage());
                 return;
+            }
+            if (sourceClass == IgslSource.class) {
+                System.out.println("alpha = " + ((IgslSource)data[0]).getAlpha() + ", delta = " + ((IgslSource)data[0]).getDelta());
+            } else {
+                System.out.println("alpha = " + ((CatalogueSource)data[0]).getAlpha() + ", delta = " + ((CatalogueSource)data[0]).getDelta());
             }
         }
 

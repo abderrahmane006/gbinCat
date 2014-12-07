@@ -5,6 +5,7 @@ import org.apache.commons.cli.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,15 +20,38 @@ public class GbinCatConf {
     public static final String PROJECTION_OPT = "p";
     public static final String OUTFILE_OPT = "o";
 
+    public static final String NB_OBJECTS_DEFAULT = "-1";
+    public static final String PROJECTION_DEFAULT = "";
+
     /**
      * Les options supportées par le programme.
      */
     private final Options options = new Options();
 
     /**
-     * Les arguments de ligne de commande analysés.
+     * Le répertoire d'entrée à analyser.
      */
-    private CommandLine commandLine;
+    private Path inputPath;
+
+    /**
+     * Le fichier de sortie.
+     */
+    private Path outFile;
+
+    /**
+     * Le nombre d'objects à traiter
+     */
+    private long nbObjects;
+
+    /**
+     * La liste des attributs pour la projection.
+     */
+    private List<String> projectionList;
+
+    /**
+     * Le type des fichiers gbin.
+     */
+    private GbinCat.GbinType gbinType;
 
     /**
      * Initialise les options.
@@ -62,6 +86,8 @@ public class GbinCatConf {
                         .isRequired()
                         .withDescription("fichier de sortie")
                         .create(OUTFILE_OPT));
+        options.addOption("igsl", false, "contenu au format IGSL");
+        options.addOption("gog", false, "contenu au format GOG");
     }
 
     /**
@@ -69,7 +95,90 @@ public class GbinCatConf {
      * @param args la ligne de commande
      */
     public void parse(String... args) throws ParseException {
-        commandLine = new PosixParser().parse(options, args, false);
+        CommandLine commandLine = new PosixParser().parse(options, args, false);
+        parseInPath(commandLine);
+        parseOutFile(commandLine);
+        parseNbObjects(commandLine);
+        parseProjection(commandLine);
+        parseType(commandLine);
+    }
+
+    /**
+     * Analyse le chemin d'entrée.
+     *
+     * @param commandLine la ligne de commande
+     */
+    private void parseInPath(CommandLine commandLine) {
+        inputPath = Paths.get(commandLine.getOptionValue(INPUT_PATH_OPT));
+    }
+
+    /**
+     * Analyse le fichier de sortie.
+     *
+     * @param commandLine la ligne de commande
+     */
+    private void parseOutFile(CommandLine commandLine) {
+        outFile = Paths.get(commandLine.getOptionValue(OUTFILE_OPT));
+    }
+
+    /**
+     * Analyse le nombre d'objets.
+     * La chaîne représentant le nombre peut se terminer par K (ou k),
+     * M (ou m), G (ou g) ou T (ou t) pour indiquer l'unité (K = x1000,
+     * M = 1 000 000, G = 1 000 000 000, T = 1 000 000 000 000).
+     *
+     * @param commandLine la ligne de commande
+     */
+    private void parseNbObjects(CommandLine commandLine) {
+        String toParse = commandLine.getOptionValue(NB_OBJECTS_OPT, "-1");
+        char last = toParse.toLowerCase().charAt(toParse.length() - 1);
+        long multFactor = 1; // par défaut, à l'unité
+        switch (last) {
+            case 'k':
+                multFactor = 1000;
+                break;
+            case 'm':
+                multFactor = 1000000;
+                break;
+            case 'g':
+                multFactor = 1000000000;
+                break;
+            case 't':
+                multFactor = 1000000000000L;
+                break;
+        }
+        if (multFactor > 1) {
+            toParse = toParse.substring(0, toParse.length() - 1);
+        }
+        nbObjects = Integer.parseInt(toParse) * multFactor;
+    }
+
+    /**
+     * Analyse les attributs pour la projection.
+     *
+     * @param commandLine la ligne de commande
+     */
+    private void parseProjection(CommandLine commandLine) {
+        List<String> result = Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT, "").split(","));
+        if (result.equals(Collections.singletonList(""))) {
+            result = Collections.emptyList();
+        }
+        projectionList = result;
+    }
+
+    /**
+     * Analyse le type de fichier.
+     *
+     * @param commandLine la ligne de commande
+     */
+    private void parseType(CommandLine commandLine) throws MissingOptionException {
+        if (commandLine.hasOption("igsl")) {
+            gbinType = GbinCat.GbinType.IGSL;
+        } else if (commandLine.hasOption("gog")) {
+            gbinType = GbinCat.GbinType.GOG;
+        } else {
+            throw new MissingOptionException("le type de fichier doit être précisé (igsl ou gog)");
+        }
     }
 
     /**
@@ -85,7 +194,7 @@ public class GbinCatConf {
      * @return le répertoire source
      */
     public Path getInPath() {
-        return Paths.get(commandLine.getOptionValue(INPUT_PATH_OPT));
+        return inputPath;
     }
 
     /**
@@ -93,15 +202,15 @@ public class GbinCatConf {
      * @return le fichier de sortie
      */
     public Path getOutFile() {
-        return Paths.get(commandLine.getOptionValue(OUTFILE_OPT));
+        return outFile;
     }
 
     /**
      * Retourne le nombre d'objets à traiter.
      * @return le nombre d'objets à traiter
      */
-    public int getNbObjects() {
-        return Integer.parseInt(commandLine.getOptionValue(NB_OBJECTS_OPT));
+    public long getNbObjects() {
+        return nbObjects;
     }
 
     /**
@@ -109,6 +218,11 @@ public class GbinCatConf {
      * @return attributs pour la projection
      */
     public List<String> getProjection() {
-        return Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT).split(","));
+        return projectionList;
     }
+
+    /**
+     * Retourne le type des donnéesL.
+     */
+    public GbinCat.GbinType getGbinType() { return gbinType; }
 }
