@@ -34,6 +34,15 @@ public enum GbinCat {
     ENVIRONMENT;
 
     /**
+     * Erreur d'analyse de la ligne de commande.
+     */
+    public static final int EXIT_CODE_PARSE_ERROR = 1;
+    /**
+     * Erreur de recherche des fichiers gbin.
+     */
+    public static final int EXIT_CODE_GBIN_FIND = 2;
+
+    /**
      * Types de fichiers gbin.
      */
     public static enum GbinType { IGSL, GOG; }
@@ -53,32 +62,13 @@ public enum GbinCat {
      * @param args command line arguments
      */
     public void run(final String... args) throws Exception {
-        // assume SLF4J is bound to logback in the current environment
-        //LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        // print logback's internal status
-        //StatusPrinter.print(lc);
-
         logger.info("Début de l'exécution");
-        try {
-            logger.info("Analyse de la ligne de commande");
-            config.parse(args);
-        } catch (ParseException e) {
-            logger.error("Echec de l'analyse de la ligne de commande : {}", e.getMessage());
-            System.err.println("Echec de l'analyse de la ligne de commande : " + e.getMessage());
-            config.printUsage();
-            return;
-        }
+        logger.info("Analyse de la ligne de commande");
+        parseCommandLine(args);
         logger.trace("Configuration [{}, {}, {}, {}, {}]", config.getInPath(), config.getGbinType(), config.getOutFile(), config.getNbObjects(), config.getProjection());
 
-        GbinFinder gbinFinder = new GbinFinder();
-        try {
-            logger.info("Recherche des fichiers gbin");
-            Files.walkFileTree(config.getInPath(), gbinFinder);
-        } catch (IOException e) {
-            logger.error("Erreur d'E/S lors de la recherche des fichiers gbin : {}", e.getMessage());
-            System.err.println("Erreur d'E/S lors de la recherche des fichiers gbin : " + e.getMessage());
-            return;
-        }
+        logger.info("Recherche des fichiers gbin");
+        GbinFinder gbinFinder = findGbinFiles();
         logger.trace(gbinFinder.getGbinFiles().toString());
 
         logger.info("Traitement des fichiers gbin");
@@ -134,6 +124,37 @@ public enum GbinCat {
         writer.close();
 
         logger.info("Fin de l'exécution");
+    }
+
+    /**
+     * Recherche les fichiers gbin.
+     * @return
+     */
+    private GbinFinder findGbinFiles() {
+        GbinFinder gbinFinder = new GbinFinder();
+        try {
+            Files.walkFileTree(config.getInPath(), gbinFinder);
+        } catch (IOException e) {
+            logger.error("Erreur d'E/S lors de la recherche des fichiers gbin : {}", e.getMessage());
+            System.err.println("Erreur d'E/S lors de la recherche des fichiers gbin : " + e.getMessage());
+            System.exit(EXIT_CODE_GBIN_FIND);
+        }
+        return gbinFinder;
+    }
+
+    /**
+     * Analyse la ligne de commande.
+     * @param args les paramètres de ligne de commande
+     */
+    private void parseCommandLine(String[] args) {
+        try {
+            config.parse(args);
+        } catch (ParseException e) {
+            logger.error("Echec de l'analyse de la ligne de commande : {}", e.getMessage());
+            System.err.println("Echec de l'analyse de la ligne de commande : " + e.getMessage());
+            config.printUsage();
+            System.exit(EXIT_CODE_PARSE_ERROR);
+        }
     }
 
     /**
