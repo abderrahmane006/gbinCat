@@ -7,18 +7,22 @@ package adam.gaia;
 // http://commons.apache.org/proper/commons-cli/usage.html / http://commons.apache.org/proper/commons-cli/properties.html
 // https://github.com/alexholmes/hdfs-file-slurper/blob/master/src/main/java/com/alexholmes/hdfsslurper/Slurper.java
 
-import gaia.cu1.tools.exception.GaiaException;
+import au.com.bytecode.opencsv.CSVWriter;
 import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
-// WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
-// import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
+import gaia.cu1.tools.exception.GaiaException;
 import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+
+// WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
+// import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
 
 /**
  * Charge un ensemble de fichiers gbin dans un fichier texte stocké dans HDFS.
@@ -42,13 +46,13 @@ public enum GbinCat {
     /**
      * Configuration du programme
      */
-    GbinCatConf config = new GbinCatConf(); // TODO : private
+    private GbinCatConf config = new GbinCatConf();
 
     /*
      * Main method of the program.
      * @param args command line arguments
      */
-    public void run(final String... args) throws ParseException {
+    public void run(final String... args) throws Exception {
         // assume SLF4J is bound to logback in the current environment
         //LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         // print logback's internal status
@@ -64,6 +68,7 @@ public enum GbinCat {
             config.printUsage();
             return;
         }
+        logger.trace("Configuration [{}, {}, {}, {}, {}]", config.getInPath(), config.getGbinType(), config.getOutFile(), config.getNbObjects(), config.getProjection());
 
         GbinFinder gbinFinder = new GbinFinder();
         try {
@@ -77,6 +82,9 @@ public enum GbinCat {
         logger.trace(gbinFinder.getGbinFiles().toString());
 
         logger.info("Traitement des fichiers gbin");
+        int nbProcessedObjects = 0;
+        String[] outData = new String[config.getProjection().size()];
+        CSVWriter writer = new CSVWriter(new FileWriter(config.getOutFile().toString()));
         Class sourceClass = config.getGbinType() == GbinType.IGSL ? IgslSource.class : CatalogueSource.class;
         for (Path file : gbinFinder.getGbinFiles()) {
             logger.info("Traitement du fichier {}", file);
@@ -89,12 +97,41 @@ public enum GbinCat {
                 System.err.println("Erreur lors du chargement du fichier gbin " + file + " : " + e.getMessage());
                 return;
             }
-            if (sourceClass == IgslSource.class) {
-                System.out.println("alpha = " + ((IgslSource)data[0]).getAlpha() + ", delta = " + ((IgslSource)data[0]).getDelta());
-            } else {
-                System.out.println("alpha = " + ((CatalogueSource)data[0]).getAlpha() + ", delta = " + ((CatalogueSource)data[0]).getDelta());
+            for (Object o : data) {
+                if (sourceClass == IgslSource.class) {
+                    IgslSource igslData = (IgslSource)o;
+                    int attributeIdx = 0;
+                    for (String attribute : config.getProjection()) {
+                        if (attribute.equals("alpha")) {
+                            outData[attributeIdx] = String.valueOf(igslData.getAlpha());
+                        } else if (attribute.equals("delta")) {
+                            outData[attributeIdx] = String.valueOf(igslData.getDelta());
+                        } else {
+                            throw new Exception("Attribut " + attribute + " pas encore supporté.");
+                        }
+                        ++attributeIdx;
+                    }
+                    logger.trace("Ecriture (IGSL) de {} dans le fichier CSV", Arrays.toString(outData));
+                    writer.writeNext(outData);
+                } else {
+                    CatalogueSource gogData = (CatalogueSource)o;
+                    int attributeIdx = 0;
+                    for (String attribute : config.getProjection()) {
+                        if (attribute.equals("alpha")) {
+                            outData[attributeIdx] = String.valueOf(gogData.getAlpha());
+                        } else if (attribute.equals("delta")) {
+                            outData[attributeIdx] = String.valueOf(gogData.getDelta());
+                        } else {
+                            throw new Exception("Attribut " + attribute + " pas encore supporté.");
+                        }
+                        ++attributeIdx;
+                    }
+                    logger.trace("Ecriture (GOG) de {} dans le fichier CSV", Arrays.toString(outData));
+                    writer.writeNext(outData);
+                }
             }
         }
+        writer.close();
 
         logger.info("Fin de l'exécution");
     }
@@ -103,7 +140,7 @@ public enum GbinCat {
      * Class method call by Java VM when starting the application.
      * @param args command line arguments
      */
-    public static void main(final String[] args) throws ParseException {
+    public static void main(final String[] args) throws Exception {
         ENVIRONMENT.run(args);
     }
 }
