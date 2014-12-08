@@ -12,11 +12,14 @@ import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
 import gaia.cu1.tools.exception.GaiaException;
 import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 import org.apache.commons.cli.ParseException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -71,11 +74,18 @@ public enum GbinCat {
         GbinFinder gbinFinder = findGbinFiles();
         logger.trace(gbinFinder.getGbinFiles().toString());
 
+        logger.info("Ouverture du fichier de sortie dans HDFS");
+        Configuration conf = new Configuration();
+        FileSystem hdfs = FileSystem.get(conf);
+        FSDataOutputStream hdfsOutputStream = hdfs.create(new org.apache.hadoop.fs.Path(config.getOutFile().toString()), false);
+        OutputStreamWriter osw = new OutputStreamWriter(hdfsOutputStream);
+
         logger.info("Traitement des fichiers gbin");
-        int nbProcessedObjects = 0;
+        long nbProcessedObjects = 0L;
         String[] outData = new String[config.getProjection().size()];
-        CSVWriter writer = new CSVWriter(new FileWriter(config.getOutFile().toString()));
+        CSVWriter writer = new CSVWriter(osw);
         Class sourceClass = config.getGbinType() == GbinType.IGSL ? IgslSource.class : CatalogueSource.class;
+        loopInGbin:
         for (Path file : gbinFinder.getGbinFiles()) {
             logger.info("Traitement du fichier {}", file);
             Object[] data = null;
@@ -103,6 +113,7 @@ public enum GbinCat {
                     }
                     logger.trace("Ecriture (IGSL) de {} dans le fichier CSV", Arrays.toString(outData));
                     writer.writeNext(outData);
+                    ++nbProcessedObjects;
                 } else {
                     CatalogueSource gogData = (CatalogueSource)o;
                     int attributeIdx = 0;
@@ -118,10 +129,17 @@ public enum GbinCat {
                     }
                     logger.trace("Ecriture (GOG) de {} dans le fichier CSV", Arrays.toString(outData));
                     writer.writeNext(outData);
+                    ++nbProcessedObjects;
+                }
+                if (nbProcessedObjects >= config.getNbObjects()) {
+                    break loopInGbin;
                 }
             }
         }
         writer.close();
+        osw.close();
+        logger.info("Fermeture du fichier de sortie dans HDFS");
+        hdfsOutputStream.close();
 
         logger.info("Fin de l'exécution");
     }
