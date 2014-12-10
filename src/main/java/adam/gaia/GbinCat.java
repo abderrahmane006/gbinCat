@@ -85,20 +85,12 @@ public enum GbinCat {
 
         logger.info("Traitement des fichiers gbin");
         long nbProcessedObjects = 0L;
-        String[] outData = new String[config.getProjection().size()];
+        String[] outData = new String[config.getProjection().size()]; // buffer de sortie
         Class sourceClass = config.getGbinType() == GbinType.IGSL ? IgslSource.class : CatalogueSource.class;
         loopInGbin:
         for (Path file : gbinFinder.getGbinFiles()) {
             logger.info("Traitement du fichier {}", file);
-            Object[] data = null;
-            try {
-                GbinLoader gbinLoader = new GbinLoader(sourceClass);
-                data = gbinLoader.loadData(file);
-            } catch (GaiaException e) {
-                logger.error("Erreur lors du chargement du fichier gbin {} : {}", file, e.getMessage());
-                System.err.println("Erreur lors du chargement du fichier gbin " + file + " : " + e.getMessage());
-                return;
-            }
+            Object[] data = loadGbinData(sourceClass, file);
             for (Object o : data) {
                 if (sourceClass == IgslSource.class) {
                     IgslSource igslData = (IgslSource)o;
@@ -168,6 +160,24 @@ public enum GbinCat {
         }
 
         return new CSVWriter(new OutputStreamWriter(hdfsOutputStream));
+    }
+
+    /**
+     * Charge les données contenues dans un fichier gbin.
+     *
+     * @param gbinSourceClass classe des éléments du fichier gbin
+     * @param file fichier à charger
+     * @return les données
+     */
+    private Object[] loadGbinData(Class gbinSourceClass, Path file) {
+        Object[] data = null;
+        try {
+            GbinLoader gbinLoader = new GbinLoader(gbinSourceClass);
+            data = gbinLoader.loadData(file);
+        } catch (GaiaException e) {
+            logDisplayAndExit(e, "Erreur lors du chargement du fichier gbin " + file, EXIT_CODE_HDFS);
+        }
+        return data;
     }
 
     /**
