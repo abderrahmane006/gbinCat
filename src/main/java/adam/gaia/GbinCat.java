@@ -74,11 +74,11 @@ public enum GbinCat {
         logger.info("Début de l'exécution");
         logger.info("Analyse de la ligne de commande");
         parseCommandLine(args);
-        logger.trace("Configuration [{}, {}, {}, {}, {}]", config.getInPath(), config.getGbinType(), config.getOutFile(), config.getNbObjects(), config.getProjection());
+        logger.trace(config.toString());
 
         logger.info("Recherche des fichiers gbin");
         GbinFinder gbinFinder = findGbinFiles();
-        logger.trace(gbinFinder.getGbinFiles().toString());
+        logger.trace("Liste des fichiers gbin : {}", gbinFinder.getGbinFiles().toString());
 
         logger.info("Ouverture du fichier de sortie dans HDFS");
         CSVWriter writer = openOutputFile(config.getOutFile().toString());
