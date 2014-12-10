@@ -40,10 +40,16 @@ public enum GbinCat {
      * Erreur d'analyse de la ligne de commande.
      */
     public static final int EXIT_CODE_PARSE_ERROR = 1;
+
     /**
      * Erreur de recherche des fichiers gbin.
      */
     public static final int EXIT_CODE_GBIN_FIND = 2;
+
+    /**
+     * Erreur d'accès à HDFS.
+     */
+    public static final int EXIT_CODE_HDFS = 3;
 
     /**
      * Types de fichiers gbin.
@@ -75,15 +81,11 @@ public enum GbinCat {
         logger.trace(gbinFinder.getGbinFiles().toString());
 
         logger.info("Ouverture du fichier de sortie dans HDFS");
-        Configuration conf = new Configuration();
-        FileSystem hdfs = FileSystem.get(conf);
-        FSDataOutputStream hdfsOutputStream = hdfs.create(new org.apache.hadoop.fs.Path(config.getOutFile().toString()), false);
-        OutputStreamWriter osw = new OutputStreamWriter(hdfsOutputStream);
+        CSVWriter writer = openOutputFile(config.getOutFile().toString());
 
         logger.info("Traitement des fichiers gbin");
         long nbProcessedObjects = 0L;
         String[] outData = new String[config.getProjection().size()];
-        CSVWriter writer = new CSVWriter(osw);
         Class sourceClass = config.getGbinType() == GbinType.IGSL ? IgslSource.class : CatalogueSource.class;
         loopInGbin:
         for (Path file : gbinFinder.getGbinFiles()) {
@@ -136,12 +138,36 @@ public enum GbinCat {
                 }
             }
         }
+        logger.info("Fermeture du fichier de sortie");
         writer.close();
-        osw.close();
-        logger.info("Fermeture du fichier de sortie dans HDFS");
-        hdfsOutputStream.close();
 
         logger.info("Fin de l'exécution");
+    }
+
+    /**
+     * Crée le fichier de sortie dans HDFS.
+     *
+     * @param fileName le nom du fichier de sortie
+     * @return une instance de CSVWriter
+     */
+    private CSVWriter openOutputFile(final String fileName) {
+        Configuration conf = new Configuration();
+
+        FileSystem hdfs = null;
+        try {
+            hdfs = FileSystem.get(conf);
+        } catch (IOException e) {
+            logDisplayAndExit(e, "Erreur d'E/S lors de l'accès au système de fichiers HDFS", EXIT_CODE_HDFS);
+        }
+
+        FSDataOutputStream hdfsOutputStream = null;
+        try {
+            hdfsOutputStream = hdfs.create(new org.apache.hadoop.fs.Path(fileName), false);
+        } catch (IOException e) {
+            logDisplayAndExit(e, "Erreur d'E/S lors d'ouverture du fichier de sortie", EXIT_CODE_HDFS);
+        }
+
+        return new CSVWriter(new OutputStreamWriter(hdfsOutputStream));
     }
 
     /**
@@ -153,11 +179,21 @@ public enum GbinCat {
         try {
             Files.walkFileTree(config.getInPath(), gbinFinder);
         } catch (IOException e) {
-            logger.error("Erreur d'E/S lors de la recherche des fichiers gbin : {}", e.getMessage());
-            System.err.println("Erreur d'E/S lors de la recherche des fichiers gbin : " + e.getMessage());
-            System.exit(EXIT_CODE_GBIN_FIND);
+            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", EXIT_CODE_GBIN_FIND);
         }
         return gbinFinder;
+    }
+
+    /**
+     * log et affiche un message d'erreur puis termine  le programme.
+     * @param e l'exception
+     * @param msg le message à afficher
+     * @param exitCode le code de sortie du programme
+     */
+    private void logDisplayAndExit(Exception e, String msg, int exitCode) {
+        logger.error("{} : {}", msg, e.getMessage());
+        System.err.println(msg + " : " + e.getMessage());
+        System.exit(exitCode);
     }
 
     /**
@@ -168,10 +204,8 @@ public enum GbinCat {
         try {
             config.parse(args);
         } catch (ParseException e) {
-            logger.error("Echec de l'analyse de la ligne de commande : {}", e.getMessage());
-            System.err.println("Echec de l'analyse de la ligne de commande : " + e.getMessage());
             config.printUsage();
-            System.exit(EXIT_CODE_PARSE_ERROR);
+            logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", EXIT_CODE_PARSE_ERROR);
         }
     }
 
