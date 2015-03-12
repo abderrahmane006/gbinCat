@@ -14,6 +14,10 @@
         Concaténe un ensemble de fichiers gbin dans un fichier texte stocké dans HDFS.
     </description>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -47,20 +51,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>gaia</groupId>
-            <artifactId>cu1</artifactId>
-            <version>17.2</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/../libs/GaiaTools-17.2-TR-r396495.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>gaia</groupId>
-            <artifactId>cu9</artifactId>
-            <version>17.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/../libs/CU9Dm.jar</systemPath>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.7</version>
@@ -86,6 +76,14 @@
             <artifactId>hamcrest-all</artifactId>
             <version>1.3</version>
         </dependency>
+        <!--
+            Libraries from the gaia project have to be installed in the local maven repository.
+            For instance,
+            $ mvn install:install-file -Dfile=GaiaTools-17.2-TR-r396495.jar -DgroupId=gaia \
+                -DartifactId=gaiatools -Dversion=17.2 -Dpackaging=jar
+            $ mvn install:install-file -Dfile=CU9Dm.jar -DgroupId=gaia \
+                -DartifactId=cu9dm -Dversion=17.0 -Dpackaging=jar
+        -->
         <dependency>
             <groupId>gaia</groupId>
             <artifactId>gaiatools</artifactId>
@@ -142,26 +140,6 @@
                         </manifest>
                     </archive>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.9</version>
-                <executions>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                            <overWriteReleases>false</overWriteReleases>
-                            <overWriteSnapshots>false</overWriteSnapshots>
-                            <overWriteIfNewer>true</overWriteIfNewer>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
