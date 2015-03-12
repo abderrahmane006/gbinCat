@@ -225,4 +225,15 @@ public class GbinCatConf {
      * Retourne le type des donnéesL.
      */
     public GbinCat.GbinType getGbinType() { return gbinType; }
+
+    @Override
+    public String toString() {
+        return "GbinCatConf{" +
+                "inputPath=" + inputPath +
+                ", outFile=" + outFile +
+                ", nbObjects=" + nbObjects +
+                ", projectionList=" + projectionList +
+                ", gbinType=" + gbinType +
+                '}';
+    }
 }
