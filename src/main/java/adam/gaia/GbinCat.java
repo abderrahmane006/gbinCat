@@ -8,21 +8,19 @@ package adam.gaia;
 // https://github.com/alexholmes/hdfs-file-slurper/blob/master/src/main/java/com/alexholmes/hdfsslurper/Slurper.java
 
 import au.com.bytecode.opencsv.CSVWriter;
-import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
-import gaia.cu1.tools.exception.GaiaException;
-import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
 
 // WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
 // import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
@@ -31,11 +29,9 @@ import java.util.Arrays;
  * Charge un ensemble de fichiers gbin dans un fichier texte stocké dans HDFS.
  *
  * @author hal
- * @version 12/2014
+ * @version 03/2015
  */
-public enum GbinCat {
-    ENVIRONMENT;
-
+public final class GbinCat extends Configured implements Tool {
     /**
      * Erreur d'analyse de la ligne de commande.
      */
@@ -70,70 +66,63 @@ public enum GbinCat {
      * Main method of the program.
      * @param args command line arguments
      */
-    public void run(final String... args) throws Exception {
+    @Override
+    public int run(final String... args) throws Exception {
         logger.info("Début de l'exécution");
-        logger.info("Analyse de la ligne de commande");
+
         parseCommandLine(args);
-        logger.trace(config.toString());
-
-        logger.info("Recherche des fichiers gbin");
         GbinFinder gbinFinder = findGbinFiles();
-        logger.trace("Liste des fichiers gbin : {}", gbinFinder.getGbinFiles().toString());
 
-        logger.info("Ouverture du fichier de sortie dans HDFS");
-        CSVWriter writer = openOutputFile(config.getOutFile().toString());
-
-        logger.info("Traitement des fichiers gbin");
-        long nbProcessedObjects = 0L;
-        String[] outData = new String[config.getProjection().size()]; // buffer de sortie
-        Class sourceClass = config.getGbinType() == GbinType.IGSL ? IgslSource.class : CatalogueSource.class;
-        loopInGbin:
-        for (Path file : gbinFinder.getGbinFiles()) {
-            logger.info("Traitement du fichier {}", file);
-            Object[] data = loadGbinData(sourceClass, file);
-            for (Object o : data) {
-                if (sourceClass == IgslSource.class) {
-                    IgslSource igslData = (IgslSource)o;
-                    int attributeIdx = 0;
-                    for (String attribute : config.getProjection()) {
-                        if (attribute.equals("alpha")) {
-                            outData[attributeIdx] = String.valueOf(igslData.getAlpha());
-                        } else if (attribute.equals("delta")) {
-                            outData[attributeIdx] = String.valueOf(igslData.getDelta());
-                        } else {
-                            throw new Exception("Attribut " + attribute + " pas encore supporté.");
-                        }
-                        ++attributeIdx;
-                    }
-                    logger.trace("Ecriture (IGSL) de {} dans le fichier CSV", Arrays.toString(outData));
-                    writer.writeNext(outData);
-                    ++nbProcessedObjects;
-                } else {
-                    CatalogueSource gogData = (CatalogueSource)o;
-                    int attributeIdx = 0;
-                    for (String attribute : config.getProjection()) {
-                        if (attribute.equals("alpha")) {
-                            outData[attributeIdx] = String.valueOf(gogData.getAlpha());
-                        } else if (attribute.equals("delta")) {
-                            outData[attributeIdx] = String.valueOf(gogData.getDelta());
-                        } else {
-                            throw new Exception("Attribut " + attribute + " pas encore supporté.");
-                        }
-                        ++attributeIdx;
-                    }
-                    logger.trace("Ecriture (GOG) de {} dans le fichier CSV", Arrays.toString(outData));
-                    writer.writeNext(outData);
-                    ++nbProcessedObjects;
-                }
-                if (nbProcessedObjects >= config.getNbObjects()) {
-                    break loopInGbin;
-                }
+        CSVWriter writer = null;
+        try {
+            writer = openOutputFile(config.getOutFile().toString());
+            if (config.getGbinType() == GbinType.IGSL) {
+                GbinIGSLFileProcessor fileProcessor = new GbinIGSLFileProcessor(config);
+                fileProcessor.process(gbinFinder, writer);
+            } else if (config.getGbinType() == GbinType.GOG) {
+                GbinGOGFileProcessor fileProcessor = new GbinGOGFileProcessor(config);
+                fileProcessor.process(gbinFinder, writer);
+            } else {
+                assert false;
             }
+        } finally {
+            logger.info("Fermeture du fichier de sortie");
+            writer.close();
         }
-        logger.info("Fermeture du fichier de sortie");
-        writer.close();
 
         logger.info("Fin de l'exécution");
+        return 0;
+    }
+
+    /**
+     * Analyse la ligne de commande.
+     * @param args les paramètres de ligne de commande
+     */
+    private void parseCommandLine(String[] args) {
+        logger.info("Analyse de la ligne de commande");
+        try {
+            config.parse(args);
+        } catch (ParseException e) {
+            config.printUsage();
+            logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", EXIT_CODE_PARSE_ERROR);
+        }
+        logger.trace(config.toString());
+    }
+
+    /**
+     * Recherche les fichiers gbin.
+     * @return
+     */
+    private GbinFinder findGbinFiles() {
+        logger.info("Recherche des fichiers gbin");
+        GbinFinder gbinFinder = new GbinFinder();
+        try {
+            Files.walkFileTree(config.getInPath(), gbinFinder);
+        } catch (IOException e) {
+            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", EXIT_CODE_GBIN_FIND);
+        }
+        logger.trace("Liste des fichiers gbin : {}", gbinFinder.getGbinFiles().toString());
+        return gbinFinder;
     }
 
     /**
@@ -143,7 +132,8 @@ public enum GbinCat {
      * @return une instance de CSVWriter
      */
     private CSVWriter openOutputFile(final String fileName) {
-        Configuration conf = new Configuration();
+        logger.info("Ouverture du fichier de sortie dans HDFS");
+        Configuration conf = getConf();
 
         FileSystem hdfs = null;
         try {
@@ -154,44 +144,13 @@ public enum GbinCat {
 
         FSDataOutputStream hdfsOutputStream = null;
         try {
-            hdfsOutputStream = hdfs.create(new org.apache.hadoop.fs.Path(fileName), false);
+            org.apache.hadoop.fs.Path outputPath = new org.apache.hadoop.fs.Path(fileName);
+            hdfsOutputStream = hdfs.create(outputPath, false);
         } catch (IOException e) {
             logDisplayAndExit(e, "Erreur d'E/S lors d'ouverture du fichier de sortie", EXIT_CODE_HDFS);
         }
 
         return new CSVWriter(new OutputStreamWriter(hdfsOutputStream));
-    }
-
-    /**
-     * Charge les données contenues dans un fichier gbin.
-     *
-     * @param gbinSourceClass classe des éléments du fichier gbin
-     * @param file fichier à charger
-     * @return les données
-     */
-    private Object[] loadGbinData(Class gbinSourceClass, Path file) {
-        Object[] data = null;
-        try {
-            GbinLoader gbinLoader = new GbinLoader(gbinSourceClass);
-            data = gbinLoader.loadData(file);
-        } catch (GaiaException e) {
-            logDisplayAndExit(e, "Erreur lors du chargement du fichier gbin " + file, EXIT_CODE_HDFS);
-        }
-        return data;
-    }
-
-    /**
-     * Recherche les fichiers gbin.
-     * @return
-     */
-    private GbinFinder findGbinFiles() {
-        GbinFinder gbinFinder = new GbinFinder();
-        try {
-            Files.walkFileTree(config.getInPath(), gbinFinder);
-        } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", EXIT_CODE_GBIN_FIND);
-        }
-        return gbinFinder;
     }
 
     /**
@@ -207,23 +166,11 @@ public enum GbinCat {
     }
 
     /**
-     * Analyse la ligne de commande.
-     * @param args les paramètres de ligne de commande
-     */
-    private void parseCommandLine(String[] args) {
-        try {
-            config.parse(args);
-        } catch (ParseException e) {
-            config.printUsage();
-            logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", EXIT_CODE_PARSE_ERROR);
-        }
-    }
-
-    /**
      * Class method call by Java VM when starting the application.
      * @param args command line arguments
      */
     public static void main(final String[] args) throws Exception {
-        ENVIRONMENT.run(args);
+        int exitCode = ToolRunner.run(new Configuration(), new GbinCat(), args);
+        System.exit(exitCode);
     }
 }
