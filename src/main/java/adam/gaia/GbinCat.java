@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 
+import static adam.gaia.GbinCat.ExitCode.*;
+
 // WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
 // import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
 
@@ -32,20 +34,20 @@ import java.nio.file.Files;
  * @version 03/2015
  */
 public final class GbinCat extends Configured implements Tool {
-    /**
-     * Erreur d'analyse de la ligne de commande.
-     */
-    public static final int EXIT_CODE_PARSE_ERROR = 1;
+    public static enum ExitCode {
+        /** Erreur d'analyse de la ligne de commande. */
+        PARSE_ERROR(1),
+        /** Erreur de recherche des fichiers gbin. */
+        GBIN_FIND(2),
+        /** Erreur d'accès à HDFS. */
+        HDFS_ACCESS(3);
 
-    /**
-     * Erreur de recherche des fichiers gbin.
-     */
-    public static final int EXIT_CODE_GBIN_FIND = 2;
+        private int value;
 
-    /**
-     * Erreur d'accès à HDFS.
-     */
-    public static final int EXIT_CODE_HDFS = 3;
+        private ExitCode(int value) {
+            this.value = value;
+        }
+    }
 
     /**
      * Types de fichiers gbin.
@@ -104,7 +106,7 @@ public final class GbinCat extends Configured implements Tool {
             config.parse(args);
         } catch (ParseException e) {
             config.printUsage();
-            logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", EXIT_CODE_PARSE_ERROR);
+            logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", PARSE_ERROR);
         }
         logger.trace(config.toString());
     }
@@ -119,7 +121,7 @@ public final class GbinCat extends Configured implements Tool {
         try {
             Files.walkFileTree(config.getInPath(), gbinFinder);
         } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", EXIT_CODE_GBIN_FIND);
+            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", GBIN_FIND);
         }
         logger.trace("Liste des fichiers gbin : {}", gbinFinder.getGbinFiles().toString());
         return gbinFinder;
@@ -139,7 +141,7 @@ public final class GbinCat extends Configured implements Tool {
         try {
             hdfs = FileSystem.get(conf);
         } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors de l'accès au système de fichiers HDFS", EXIT_CODE_HDFS);
+            logDisplayAndExit(e, "Erreur d'E/S lors de l'accès au système de fichiers HDFS", HDFS_ACCESS);
         }
 
         FSDataOutputStream hdfsOutputStream = null;
@@ -147,7 +149,7 @@ public final class GbinCat extends Configured implements Tool {
             org.apache.hadoop.fs.Path outputPath = new org.apache.hadoop.fs.Path(fileName);
             hdfsOutputStream = hdfs.create(outputPath, false);
         } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors d'ouverture du fichier de sortie", EXIT_CODE_HDFS);
+            logDisplayAndExit(e, "Erreur d'E/S lors d'ouverture du fichier de sortie", HDFS_ACCESS);
         }
 
         return new CSVWriter(new OutputStreamWriter(hdfsOutputStream));
@@ -159,10 +161,10 @@ public final class GbinCat extends Configured implements Tool {
      * @param msg le message à afficher
      * @param exitCode le code de sortie du programme
      */
-    private void logDisplayAndExit(Exception e, String msg, int exitCode) {
+    private void logDisplayAndExit(Exception e, String msg, ExitCode exitCode) {
         logger.error("{} : {}", msg, e.getMessage());
         System.err.println(msg + " : " + e.getMessage());
-        System.exit(exitCode);
+        System.exit(exitCode.value);
     }
 
     /**
