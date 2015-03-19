@@ -1,6 +1,7 @@
 package adam.gaia;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,12 @@ import java.util.List;
 public abstract class GbinFileProcessor {
     /** Journal. */
     private static final Logger logger = LoggerFactory.getLogger(GbinFileProcessor.class);
+
+    /** Position du nom de fichier dans le tuple en sortie */
+    public static final int FILENAME_POSITION = 0;
+
+    /** Première position disponible pour les données dans le tuple en sortie */
+    public static final int FIRST_POSITION = 1;
 
     /** Configuration du programme. */
     private final GbinCatConf config;
@@ -35,10 +42,11 @@ public abstract class GbinFileProcessor {
     public void process(GbinFinder files, CSVWriter writer) throws Exception {
         logger.info("Traitement des fichiers gbin");
         long nbProcessedObjects = 0L;
-        String[] outData = new String[getProjection().size()]; // buffer de sortie
+        String[] outData = new String[getProjection().size() + 1]; // buffer de sortie (nb d'attributs + nom du fichier)
         loopInGbin:
         for (Path file : files.getGbinFiles()) {
             logger.info("Traitement du fichier {} de type {}", file, getSourceClass());
+            outData[FILENAME_POSITION] = FilenameUtils.getBaseName(file.toString());
             GbinLoader gbinLoader = new GbinLoader(getSourceClass());
             Object[] data = gbinLoader.loadData(file);
             for (Object o : data) {

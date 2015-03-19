@@ -99,7 +99,7 @@ public class GbinGOGFileProcessor  extends GbinFileProcessor{
     @Override
     protected void processGbinObject(final Object o, final String[] outData) throws Exception {
         CatalogueSource gogData = (CatalogueSource)o;
-        int attributeIdx = 0;
+        int attributeIdx = FIRST_POSITION;
         for (String attribute : getProjection()) {
             if (attribute.equals("Alpha")) {
                 outData[attributeIdx] = String.valueOf(gogData.getAlpha());

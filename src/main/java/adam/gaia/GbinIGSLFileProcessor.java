@@ -107,7 +107,7 @@ public class GbinIGSLFileProcessor extends GbinFileProcessor {
     @Override
     protected void processGbinObject(final Object o, final String[] outData) throws Exception {
         IgslSource igslData = (IgslSource)o;
-        int attributeIdx = 0;
+        int attributeIdx = FIRST_POSITION;
         for (String attribute : getProjection()) {
             if (attribute.equals("Alpha")) {
                 outData[attributeIdx] = String.valueOf(igslData.getAlpha());
