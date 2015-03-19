@@ -152,7 +152,7 @@ public final class GbinCat extends Configured implements Tool {
             logDisplayAndExit(e, "Erreur d'E/S lors d'ouverture du fichier de sortie", HDFS_ACCESS);
         }
 
-        return new CSVWriter(new OutputStreamWriter(hdfsOutputStream));
+        return new CSVWriter(new OutputStreamWriter(hdfsOutputStream), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER);
     }
 
     /**
