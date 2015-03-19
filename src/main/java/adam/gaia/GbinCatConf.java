@@ -19,9 +19,12 @@ public class GbinCatConf {
     public static final String NB_OBJECTS_OPT = "n";
     public static final String PROJECTION_OPT = "p";
     public static final String OUTFILE_OPT = "o";
+    public static final String GOG_OPT = "gog";
+    public static final String IGSL_OPT = "igsl";
 
     public static final String NB_OBJECTS_DEFAULT = "-1";
-    public static final String PROJECTION_DEFAULT = "";
+    public static final String PROJECTION_DEFAULT = "*";
+    public static final String PROJECTION_SEP = ",";
 
     /**
      * Les options supportées par le programme.
@@ -86,8 +89,8 @@ public class GbinCatConf {
                         .isRequired()
                         .withDescription("fichier de sortie")
                         .create(OUTFILE_OPT));
-        options.addOption("igsl", false, "contenu au format IGSL");
-        options.addOption("gog", false, "contenu au format GOG");
+        options.addOption(IGSL_OPT, false, "contenu au format IGSL");
+        options.addOption(GOG_OPT, false, "contenu au format GOG");
     }
 
     /**
@@ -130,7 +133,7 @@ public class GbinCatConf {
      * @param commandLine la ligne de commande
      */
     private void parseNbObjects(CommandLine commandLine) {
-        String toParse = commandLine.getOptionValue(NB_OBJECTS_OPT, "-1");
+        String toParse = commandLine.getOptionValue(NB_OBJECTS_OPT, NB_OBJECTS_DEFAULT);
         char last = toParse.toLowerCase().charAt(toParse.length() - 1);
         long multFactor = 1; // par défaut, à l'unité
         switch (last) {
@@ -159,8 +162,8 @@ public class GbinCatConf {
      * @param commandLine la ligne de commande
      */
     private void parseProjection(CommandLine commandLine) {
-        List<String> result = Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT, "").split(","));
-        if (result.equals(Collections.singletonList(""))) {
+        List<String> result = Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT, PROJECTION_DEFAULT).split(PROJECTION_SEP));
+        if (result.equals(Collections.singletonList(PROJECTION_DEFAULT))) {
             result = Collections.emptyList();
         }
         projectionList = result;
@@ -172,9 +175,9 @@ public class GbinCatConf {
      * @param commandLine la ligne de commande
      */
     private void parseType(CommandLine commandLine) throws MissingOptionException {
-        if (commandLine.hasOption("igsl")) {
+        if (commandLine.hasOption(IGSL_OPT)) {
             gbinType = GbinCat.GbinType.IGSL;
-        } else if (commandLine.hasOption("gog")) {
+        } else if (commandLine.hasOption(GOG_OPT)) {
             gbinType = GbinCat.GbinType.GOG;
         } else {
             throw new MissingOptionException("le type de fichier doit être précisé (igsl ou gog)");

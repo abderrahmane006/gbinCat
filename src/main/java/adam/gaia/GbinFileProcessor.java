@@ -35,7 +35,7 @@ public abstract class GbinFileProcessor {
     public void process(GbinFinder files, CSVWriter writer) throws Exception {
         logger.info("Traitement des fichiers gbin");
         long nbProcessedObjects = 0L;
-        String[] outData = new String[config.getProjection().size()]; // buffer de sortie
+        String[] outData = new String[getProjection().size()]; // buffer de sortie
         loopInGbin:
         for (Path file : files.getGbinFiles()) {
             logger.info("Traitement du fichier {} de type {}", file, getSourceClass());
@@ -57,7 +57,7 @@ public abstract class GbinFileProcessor {
      * Retourne la liste des attributs pour la projection.
      * @return attributs pour la projection
      */
-    public List<String> getProjection() {
+    protected List<String> getProjection() {
         return config.getProjection();
     }
 
