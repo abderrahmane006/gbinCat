@@ -8,11 +8,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+//TODO à découper en 2 classes
 /**
  * Analyse la ligne de commande et configure gbinCat.
- *
- * @author hal
- * @version 12/2014
  */
 public class GbinCatConf {
     public static final String INPUT_PATH_OPT = "d";
@@ -162,11 +160,7 @@ public class GbinCatConf {
      * @param commandLine la ligne de commande
      */
     private void parseProjection(CommandLine commandLine) {
-        List<String> result = Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT, PROJECTION_DEFAULT).split(PROJECTION_SEP));
-        if (result.equals(Collections.singletonList(PROJECTION_DEFAULT))) {
-            result = Collections.emptyList();
-        }
-        projectionList = result;
+        projectionList = Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT, PROJECTION_DEFAULT).split(PROJECTION_SEP));
     }
 
     /**
@@ -221,6 +215,16 @@ public class GbinCatConf {
      * @return attributs pour la projection
      */
     public List<String> getProjection() {
+        if (projectionList.equals(Collections.singletonList(PROJECTION_DEFAULT))) {
+            //TODO à reprendre
+            if (getGbinType() == GbinCat.GbinType.GOG) {
+                projectionList = GOGDescriptor.getAttributesAsList();
+            } else if (getGbinType() == GbinCat.GbinType.IGSL) {
+                projectionList = IGSLDescriptor.getAttributesAsList();
+            } else {
+                assert false;
+            }
+        }
         return projectionList;
     }
 

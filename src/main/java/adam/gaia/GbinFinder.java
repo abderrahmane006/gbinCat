@@ -1,62 +1,65 @@
 package adam.gaia;
 
+import au.com.bytecode.opencsv.CSVWriter;
+
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.FileVisitResult.TERMINATE;
 
 /**
  * Recherche les fichiers gbin dans une arborescence.
- *
- * @author hal
- * @version dec. 2014
  */
 public class GbinFinder extends SimpleFileVisitor<Path> {
-    /**
-     * Motif à rechercher (*.gbin).
-     */
-    private static final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:*.gbin");
+    private static final PathMatcher PATTERN_TO_MATCH = FileSystems.getDefault().getPathMatcher("glob:*.gbin");
 
-    /**
-     * Liste des fichiers gbin trouvés.
-     */
-    private List<Path> gbinFiles = new ArrayList<>();
+    private GbinCatConf config;
+    private GbinFileProcessor gbinFileProcessor;
+    private long nbProcessedObjects = 0L;
+    private OutputTuple outputTuple;
+    private CSVWriter writer;
 
-    // Compares the glob pattern against
-    // the file or directory name.
-
-    /**
-     * Retourne la liste des fichiers trouvés.
-     * @return fichiers trouvés
-     */
-    public List<Path> getGbinFiles() {
-        return Collections.unmodifiableList(gbinFiles);
+    public GbinFinder(GbinCatConf config, CSVWriter writer) {
+        this.config = config;
+        this.writer = writer;
+        outputTuple = new OutputTuple(config.getProjection().size());
+        //TODO utiliser le pattern abstract factory
+        //TODO créer une méthode isIGSL
+        if (config.getGbinType() == GbinCat.GbinType.IGSL) {
+            this.gbinFileProcessor = new GbinIGSLFileProcessor(config, outputTuple);
+        } else if (config.getGbinType() == GbinCat.GbinType.GOG) {
+            this.gbinFileProcessor = new GbinGOGFileProcessor(config, outputTuple);
+        } else {
+            assert false;
+        }
     }
 
     /**
-     * Invoque le test pour chaque fichier.
+     * Invoqué pour chaque fichier.
+     *
      * @param file le fichier à tester
      * @param attrs les attributs du fichier
-     * @return le code de retour
+     * @return CONTINUE ou TERMINATE pour contrôler la suite du processus
      */
     @Override
     public FileVisitResult visitFile(Path file,
                                      BasicFileAttributes attrs) {
-        find(file);
-        return CONTINUE;
+        try {
+            processIfPatternMatches(file);
+        } catch (Exception e) {
+            //TODO à traiter
+        }
+        return (nbProcessedObjects >= config.getNbObjects()) ? TERMINATE : CONTINUE;
     }
 
-    /**
-     * Compare le motif avec le nom du fichier ou du répertoire.
-     * @param file chemin à comparer
-     */
-    private void find(Path file) {
-        Path name = file.getFileName();
-        if (name != null && matcher.matches(name)) {
-            gbinFiles.add(file);
+    private void processIfPatternMatches(Path file) throws Exception {
+        if (isGbinFile(file.getFileName())) {
+            nbProcessedObjects = gbinFileProcessor.process(file, nbProcessedObjects, writer);
         }
+    }
+
+    private boolean isGbinFile(Path name) {
+        return name != null && PATTERN_TO_MATCH.matches(name);
     }
 }

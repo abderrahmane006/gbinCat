@@ -73,20 +73,13 @@ public final class GbinCat extends Configured implements Tool {
         logger.info("Début de l'exécution");
 
         parseCommandLine(args);
-        GbinFinder gbinFinder = findGbinFiles();
 
-        CSVWriter writer = null;
+        CSVWriter writer = openOutputFile(config.getOutFile().toString());
+        GbinFinder gbinFinder = new GbinFinder(config, writer);
         try {
-            writer = openOutputFile(config.getOutFile().toString());
-            if (config.getGbinType() == GbinType.IGSL) {
-                GbinIGSLFileProcessor fileProcessor = new GbinIGSLFileProcessor(config);
-                fileProcessor.process(gbinFinder, writer);
-            } else if (config.getGbinType() == GbinType.GOG) {
-                GbinGOGFileProcessor fileProcessor = new GbinGOGFileProcessor(config);
-                fileProcessor.process(gbinFinder, writer);
-            } else {
-                assert false;
-            }
+            Files.walkFileTree(config.getInPath(), gbinFinder);
+        } catch (IOException e) {
+            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", GBIN_FIND);
         } finally {
             logger.info("Fermeture du fichier de sortie");
             writer.close();
@@ -109,22 +102,6 @@ public final class GbinCat extends Configured implements Tool {
             logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", PARSE_ERROR);
         }
         logger.trace(config.toString());
-    }
-
-    /**
-     * Recherche les fichiers gbin.
-     * @return
-     */
-    private GbinFinder findGbinFiles() {
-        logger.info("Recherche des fichiers gbin");
-        GbinFinder gbinFinder = new GbinFinder();
-        try {
-            Files.walkFileTree(config.getInPath(), gbinFinder);
-        } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", GBIN_FIND);
-        }
-        logger.trace("Liste des fichiers gbin : {}", gbinFinder.getGbinFiles().toString());
-        return gbinFinder;
     }
 
     /**

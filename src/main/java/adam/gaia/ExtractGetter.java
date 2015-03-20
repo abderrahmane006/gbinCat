@@ -22,14 +22,14 @@ public class ExtractGetter {
             }
         }
         Collections.sort(methodNames);
-        for (String methodName : methodNames) {
-            System.out.println(" * " + methodName);
-        }
 //        for (String methodName : methodNames) {
-//            System.out.println("if (attribute.equals(\"" + methodName + "\")) {");
-//            System.out.println("    outData[attributeIdx] = String.valueOf(igslData.get" + methodName + "());");
-//            System.out.println("}");
-//            System.out.println("else");
+//            System.out.println(" * " + methodName);
 //        }
+        for (String methodName : methodNames) {
+            System.out.println("if (attribute.equals(\"" + methodName + "\")) {");
+            System.out.println("    outputTuple.setAttribute(attributeIdx, String.valueOf(igslData.get" + methodName + "()));");
+            System.out.println("}");
+            System.out.println("else");
+        }
     }
 }
