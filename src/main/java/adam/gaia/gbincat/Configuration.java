@@ -1,4 +1,7 @@
-package adam.gaia;
+package adam.gaia.gbincat;
+
+import adam.gaia.gbin.GOGDescriptor;
+import adam.gaia.gbin.IGSLDescriptor;
 
 import java.nio.file.Path;
 import java.util.Collections;

@@ -1,4 +1,4 @@
-package adam.gaia;
+package adam.gaia.gbin;
 
 import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 

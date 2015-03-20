@@ -1,5 +1,9 @@
-package adam.gaia;
+package adam.gaia.gbincat;
 
+import adam.gaia.gbincat.GbinFileProcessor;
+import adam.gaia.gbin.IGSLDescriptor;
+import adam.gaia.gbincat.Configuration;
+import adam.gaia.gbincat.OutputTuple;
 import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
 
 /**

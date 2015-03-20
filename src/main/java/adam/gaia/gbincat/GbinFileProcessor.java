@@ -1,5 +1,6 @@
-package adam.gaia;
+package adam.gaia.gbincat;
 
+import adam.gaia.gbin.GbinLoader;
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;

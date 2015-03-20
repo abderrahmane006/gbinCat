@@ -1,11 +1,15 @@
-package adam.gaia;
+package adam.gaia.gbincat;
 
+import adam.gaia.gbin.GOGDescriptor;
+import adam.gaia.gbincat.GbinFileProcessor;
+import adam.gaia.gbincat.Configuration;
+import adam.gaia.gbincat.OutputTuple;
 import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
 
 /**
  * Traite les enregistrements d'un fichier gbin au format GOG.
  */
-public class GbinGOGFileProcessor  extends GbinFileProcessor{
+public class GbinGOGFileProcessor  extends GbinFileProcessor {
     public GbinGOGFileProcessor(Configuration config, OutputTuple outputTuple) {
         super(config, outputTuple);
     }

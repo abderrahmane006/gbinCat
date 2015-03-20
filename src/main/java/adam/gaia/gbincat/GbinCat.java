@@ -1,4 +1,4 @@
-package adam.gaia;
+package adam.gaia.gbincat;
 
 // Où placer les config du logger ? (http://maven.apache.org/plugins/maven-resources-plugin/)
 // http://www.javacodegeeks.com/2012/04/using-slf4j-with-logback-tutorial.html
@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 
-import static adam.gaia.GbinCat.ExitCode.*;
+import static adam.gaia.gbincat.GbinCat.ExitCode.*;
 
 // WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
 // import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
@@ -47,33 +47,19 @@ public final class GbinCat extends Configured implements Tool {
         }
     }
 
-    /**
-     * Types de fichiers gbin.
-     */
     public static enum GbinType { IGSL, GOG; }
 
-    /**
-     * Configuration du programme
-     */
     private Configuration config;
+    private OutputTuple outputTuple;
 
     @Override
     public int run(final String... args) throws Exception {
         logger.info("Début de l'exécution");
-
         parseCommandLineAndConfigure(args);
-
-        CSVWriter writer = openOutputFile(config.getOutputFile().toString());
-        GbinFinder gbinFinder = new GbinFinder(config, writer);
-        try {
-            Files.walkFileTree(config.getInputPath(), gbinFinder);
-        } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", GBIN_ACCESS);
-        } finally {
-            logger.info("Fermeture du fichier de sortie");
-            writer.close();
-        }
-
+        CSVWriter writer = openOutputFile();
+        GbinFileProcessor gbinFileProcessor = getGbinFileProcessor();
+        GbinFinderAndProcessor gbinFinderAndProcessor = new GbinFinderAndProcessor(config, gbinFileProcessor, writer);
+        executeProcessing(gbinFinderAndProcessor, writer);
         logger.info("Fin de l'exécution");
         return NO_ERROR.value;
     }
@@ -88,19 +74,45 @@ public final class GbinCat extends Configured implements Tool {
             logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", PARSE_ERROR);
         }
         logger.trace(config.toString());
+        outputTuple = new OutputTuple(config.getAttributesToProject().size());
     }
 
-    private CSVWriter openOutputFile(final String fileName) {
-        logger.info("Ouverture du fichier de sortie dans HDFS");
-        org.apache.hadoop.conf.Configuration conf = getConf();
+    private GbinFileProcessor getGbinFileProcessor() {
+        //TODO utiliser le pattern abstract factory
+        //TODO créer une méthode isIGSL
+        GbinFileProcessor gbinFileProcessor = null;
+        if (config.getFiletype() == GbinType.IGSL) {
+            gbinFileProcessor = new GbinIGSLFileProcessor(config, outputTuple);
+        } else if (config.getFiletype() == GbinType.GOG) {
+            gbinFileProcessor = new GbinGOGFileProcessor(config, outputTuple);
+        } else {
+            assert false;
+        }
+        return gbinFileProcessor;
+    }
 
+    private CSVWriter openOutputFile() {
+        logger.info("Ouverture du fichier de sortie dans HDFS");
+        String outputFilename = config.getOutputFile().toString();
+        FileSystem hdfs = getHDFSFileSystem();
+        FSDataOutputStream hdfsOutputStream = getFsDataOutputStream(hdfs, outputFilename);
+        return new CSVWriter(new OutputStreamWriter(hdfsOutputStream),
+                CSVWriter.DEFAULT_SEPARATOR,
+                CSVWriter.NO_QUOTE_CHARACTER);
+    }
+
+    private FileSystem getHDFSFileSystem() {
         FileSystem hdfs = null;
+        org.apache.hadoop.conf.Configuration conf = getConf();
         try {
             hdfs = FileSystem.get(conf);
         } catch (IOException e) {
             logDisplayAndExit(e, "Erreur d'E/S lors de l'accès au système de fichiers HDFS", HDFS_ACCESS);
         }
+        return hdfs;
+    }
 
+    private FSDataOutputStream getFsDataOutputStream(FileSystem hdfs, String fileName) {
         FSDataOutputStream hdfsOutputStream = null;
         try {
             org.apache.hadoop.fs.Path outputPath = new org.apache.hadoop.fs.Path(fileName);
@@ -108,8 +120,18 @@ public final class GbinCat extends Configured implements Tool {
         } catch (IOException e) {
             logDisplayAndExit(e, "Erreur d'E/S lors d'ouverture du fichier de sortie", HDFS_ACCESS);
         }
+        return hdfsOutputStream;
+    }
 
-        return new CSVWriter(new OutputStreamWriter(hdfsOutputStream), CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER);
+    private void executeProcessing(GbinFinderAndProcessor gbinFinderAndProcessor, CSVWriter writer) throws IOException {
+        try {
+            Files.walkFileTree(config.getInputPath(), gbinFinderAndProcessor);
+        } catch (IOException e) {
+            logDisplayAndExit(e, "Erreur d'E/S lors de l'accès aux fichiers gbin", GBIN_ACCESS);
+        } finally {
+            logger.info("Fermeture du fichier de sortie");
+            writer.close();
+        }
     }
 
     /**

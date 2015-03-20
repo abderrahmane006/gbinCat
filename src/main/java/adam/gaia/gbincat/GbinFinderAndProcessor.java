@@ -1,4 +1,4 @@
-package adam.gaia;
+package adam.gaia.gbincat;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
@@ -11,28 +11,18 @@ import static java.nio.file.FileVisitResult.TERMINATE;
 /**
  * Recherche les fichiers gbin dans une arborescence.
  */
-public class GbinFinder extends SimpleFileVisitor<Path> {
+public class GbinFinderAndProcessor extends SimpleFileVisitor<Path> {
     private static final PathMatcher PATTERN_TO_MATCH = FileSystems.getDefault().getPathMatcher("glob:*.gbin");
 
     private Configuration config;
     private GbinFileProcessor gbinFileProcessor;
     private long nbProcessedObjects = 0L;
-    private OutputTuple outputTuple;
     private CSVWriter writer;
 
-    public GbinFinder(Configuration config, CSVWriter writer) {
+    public GbinFinderAndProcessor(Configuration config, GbinFileProcessor gbinFileProcessor, CSVWriter writer) {
         this.config = config;
         this.writer = writer;
-        outputTuple = new OutputTuple(config.getAttributesToProject().size());
-        //TODO utiliser le pattern abstract factory
-        //TODO créer une méthode isIGSL
-        if (config.getFiletype() == GbinCat.GbinType.IGSL) {
-            this.gbinFileProcessor = new GbinIGSLFileProcessor(config, outputTuple);
-        } else if (config.getFiletype() == GbinCat.GbinType.GOG) {
-            this.gbinFileProcessor = new GbinGOGFileProcessor(config, outputTuple);
-        } else {
-            assert false;
-        }
+        this.gbinFileProcessor = gbinFileProcessor;
     }
 
     /**

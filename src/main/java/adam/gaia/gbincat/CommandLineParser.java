@@ -1,4 +1,4 @@
-package adam.gaia;
+package adam.gaia.gbincat;
 
 import org.apache.commons.cli.*;
 

@@ -1,4 +1,4 @@
-package adam.gaia;
+package adam.gaia.tools;
 
 import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
 

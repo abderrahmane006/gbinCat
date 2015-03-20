@@ -1,4 +1,4 @@
-package adam.gaia;
+package adam.gaia.gbin;
 
 import gaia.cu1.tools.dal.ObjectFactory;
 import gaia.cu1.tools.dal.file.FileStore;

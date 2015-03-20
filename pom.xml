@@ -136,7 +136,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>adam.gaia.GbinCat</mainClass>
+                            <mainClass>adam.gaia.gbincat.GbinCat</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -150,7 +150,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>adam.gaia.GbinCat</mainClass>
+                            <mainClass>adam.gaia.gbincat.GbinCat</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
