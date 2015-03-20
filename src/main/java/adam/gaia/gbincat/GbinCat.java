@@ -82,8 +82,10 @@ public final class GbinCat extends Configured implements Tool {
         //TODO créer une méthode isIGSL
         GbinFileProcessor gbinFileProcessor = null;
         if (config.getFiletype() == GbinType.IGSL) {
+            logger.info("Création d'un FileProcessor de type IGSL");
             gbinFileProcessor = new GbinIGSLFileProcessor(config, outputTuple);
         } else if (config.getFiletype() == GbinType.GOG) {
+            logger.info("Création d'un FileProcessor de type GOG");
             gbinFileProcessor = new GbinGOGFileProcessor(config, outputTuple);
         } else {
             assert false;
@@ -124,6 +126,7 @@ public final class GbinCat extends Configured implements Tool {
     }
 
     private void executeProcessing(GbinFinderAndProcessor gbinFinderAndProcessor, CSVWriter writer) throws IOException {
+        logger.info("Démarrage du traitement des fichiers");
         try {
             Files.walkFileTree(config.getInputPath(), gbinFinderAndProcessor);
         } catch (IOException e) {
@@ -131,6 +134,10 @@ public final class GbinCat extends Configured implements Tool {
         } finally {
             logger.info("Fermeture du fichier de sortie");
             writer.close();
+        }
+        if (gbinFinderAndProcessor.getExceptionDuringProcessing() != null) {
+            logDisplayAndExit(gbinFinderAndProcessor.getExceptionDuringProcessing(),
+                    "Erreur d'E/S lors du traitement des fichiers gbin", GBIN_ACCESS);
         }
     }
 

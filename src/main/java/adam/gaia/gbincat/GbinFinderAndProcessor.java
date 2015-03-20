@@ -18,6 +18,7 @@ public class GbinFinderAndProcessor extends SimpleFileVisitor<Path> {
     private GbinFileProcessor gbinFileProcessor;
     private long nbProcessedObjects = 0L;
     private CSVWriter writer;
+    private Exception exceptionDuringProcessing;
 
     public GbinFinderAndProcessor(Configuration config, GbinFileProcessor gbinFileProcessor, CSVWriter writer) {
         this.config = config;
@@ -35,12 +36,19 @@ public class GbinFinderAndProcessor extends SimpleFileVisitor<Path> {
     @Override
     public FileVisitResult visitFile(Path file,
                                      BasicFileAttributes attrs) {
+        FileVisitResult result = CONTINUE;
         try {
             processIfPatternMatches(file);
+            result = (nbProcessedObjects >= config.getNumberOfObjectsToProcess()) ? TERMINATE : CONTINUE;
         } catch (Exception e) {
-            //TODO à traiter
+            exceptionDuringProcessing = e;
+            result = TERMINATE;
         }
-        return (nbProcessedObjects >= config.getNumberOfObjectsToProcess()) ? TERMINATE : CONTINUE;
+        return result;
+    }
+
+    public Exception getExceptionDuringProcessing() {
+        return exceptionDuringProcessing;
     }
 
     private void processIfPatternMatches(Path file) throws Exception {
