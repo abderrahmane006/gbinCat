@@ -6,7 +6,7 @@ import gaia.cu9.archivearchitecture.core.dm.CatalogueSource;
  * Traite les enregistrements d'un fichier gbin au format GOG.
  */
 public class GbinGOGFileProcessor  extends GbinFileProcessor{
-    public GbinGOGFileProcessor(GbinCatConf config, OutputTuple outputTuple) {
+    public GbinGOGFileProcessor(Configuration config, OutputTuple outputTuple) {
         super(config, outputTuple);
     }
 

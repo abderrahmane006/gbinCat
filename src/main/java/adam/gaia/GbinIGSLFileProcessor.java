@@ -6,7 +6,7 @@ import gaia.cu1.mdb.cu3.auxdata.igsl.dm.IgslSource;
  * Traite les enregistrements d'un fichier gbin au format IGSL.
  */
 public class GbinIGSLFileProcessor extends GbinFileProcessor {
-    public GbinIGSLFileProcessor(GbinCatConf config, OutputTuple outputTuple) {
+    public GbinIGSLFileProcessor(Configuration config, OutputTuple outputTuple) {
         super(config, outputTuple);
     }
 

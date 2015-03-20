@@ -14,21 +14,21 @@ import static java.nio.file.FileVisitResult.TERMINATE;
 public class GbinFinder extends SimpleFileVisitor<Path> {
     private static final PathMatcher PATTERN_TO_MATCH = FileSystems.getDefault().getPathMatcher("glob:*.gbin");
 
-    private GbinCatConf config;
+    private Configuration config;
     private GbinFileProcessor gbinFileProcessor;
     private long nbProcessedObjects = 0L;
     private OutputTuple outputTuple;
     private CSVWriter writer;
 
-    public GbinFinder(GbinCatConf config, CSVWriter writer) {
+    public GbinFinder(Configuration config, CSVWriter writer) {
         this.config = config;
         this.writer = writer;
-        outputTuple = new OutputTuple(config.getProjection().size());
+        outputTuple = new OutputTuple(config.getAttributesToProject().size());
         //TODO utiliser le pattern abstract factory
         //TODO créer une méthode isIGSL
-        if (config.getGbinType() == GbinCat.GbinType.IGSL) {
+        if (config.getFiletype() == GbinCat.GbinType.IGSL) {
             this.gbinFileProcessor = new GbinIGSLFileProcessor(config, outputTuple);
-        } else if (config.getGbinType() == GbinCat.GbinType.GOG) {
+        } else if (config.getFiletype() == GbinCat.GbinType.GOG) {
             this.gbinFileProcessor = new GbinGOGFileProcessor(config, outputTuple);
         } else {
             assert false;
@@ -50,7 +50,7 @@ public class GbinFinder extends SimpleFileVisitor<Path> {
         } catch (Exception e) {
             //TODO à traiter
         }
-        return (nbProcessedObjects >= config.getNbObjects()) ? TERMINATE : CONTINUE;
+        return (nbProcessedObjects >= config.getNumberOfObjectsToProcess()) ? TERMINATE : CONTINUE;
     }
 
     private void processIfPatternMatches(Path file) throws Exception {

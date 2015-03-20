@@ -1,6 +1,5 @@
 package adam.gaia;
 
-
 // Où placer les config du logger ? (http://maven.apache.org/plugins/maven-resources-plugin/)
 // http://www.javacodegeeks.com/2012/04/using-slf4j-with-logback-tutorial.html
 // http://www.slf4j.org/ / http://logback.qos.ch/documentation.html
@@ -9,7 +8,6 @@ package adam.gaia;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.cli.ParseException;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -28,17 +26,17 @@ import static adam.gaia.GbinCat.ExitCode.*;
 // import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
 
 /**
- * Charge un ensemble de fichiers gbin dans un fichier texte stocké dans HDFS.
- *
- * @author hal
- * @version 03/2015
+ * Charge un ensemble de fichiers gbin dans un fichier stocké dans HDFS.
  */
 public final class GbinCat extends Configured implements Tool {
+    private static final Logger logger = LoggerFactory.getLogger(GbinCat.class);
+
     public static enum ExitCode {
+        NO_ERROR(0),
         /** Erreur d'analyse de la ligne de commande. */
         PARSE_ERROR(1),
         /** Erreur de recherche des fichiers gbin. */
-        GBIN_FIND(2),
+        GBIN_ACCESS(2),
         /** Erreur d'accès à HDFS. */
         HDFS_ACCESS(3);
 
@@ -55,64 +53,46 @@ public final class GbinCat extends Configured implements Tool {
     public static enum GbinType { IGSL, GOG; }
 
     /**
-     * Journal.
-     */
-    private static final Logger logger = LoggerFactory.getLogger(GbinCat.class);
-
-    /**
      * Configuration du programme
      */
-    private GbinCatConf config = new GbinCatConf();
+    private Configuration config;
 
-    /*
-     * Main method of the program.
-     * @param args command line arguments
-     */
     @Override
     public int run(final String... args) throws Exception {
         logger.info("Début de l'exécution");
 
-        parseCommandLine(args);
+        parseCommandLineAndConfigure(args);
 
-        CSVWriter writer = openOutputFile(config.getOutFile().toString());
+        CSVWriter writer = openOutputFile(config.getOutputFile().toString());
         GbinFinder gbinFinder = new GbinFinder(config, writer);
         try {
-            Files.walkFileTree(config.getInPath(), gbinFinder);
+            Files.walkFileTree(config.getInputPath(), gbinFinder);
         } catch (IOException e) {
-            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", GBIN_FIND);
+            logDisplayAndExit(e, "Erreur d'E/S lors de la recherche des fichiers gbin", GBIN_ACCESS);
         } finally {
             logger.info("Fermeture du fichier de sortie");
             writer.close();
         }
 
         logger.info("Fin de l'exécution");
-        return 0;
+        return NO_ERROR.value;
     }
 
-    /**
-     * Analyse la ligne de commande.
-     * @param args les paramètres de ligne de commande
-     */
-    private void parseCommandLine(String[] args) {
+    private void parseCommandLineAndConfigure(String[] args) {
         logger.info("Analyse de la ligne de commande");
+        CommandLineParser commandLineParser = new CommandLineParser();
         try {
-            config.parse(args);
+            config = commandLineParser.parse(args);
         } catch (ParseException e) {
-            config.printUsage();
+            commandLineParser.printUsage();
             logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", PARSE_ERROR);
         }
         logger.trace(config.toString());
     }
 
-    /**
-     * Crée le fichier de sortie dans HDFS.
-     *
-     * @param fileName le nom du fichier de sortie
-     * @return une instance de CSVWriter
-     */
     private CSVWriter openOutputFile(final String fileName) {
         logger.info("Ouverture du fichier de sortie dans HDFS");
-        Configuration conf = getConf();
+        org.apache.hadoop.conf.Configuration conf = getConf();
 
         FileSystem hdfs = null;
         try {
@@ -144,12 +124,8 @@ public final class GbinCat extends Configured implements Tool {
         System.exit(exitCode.value);
     }
 
-    /**
-     * Class method call by Java VM when starting the application.
-     * @param args command line arguments
-     */
     public static void main(final String[] args) throws Exception {
-        int exitCode = ToolRunner.run(new Configuration(), new GbinCat(), args);
+        int exitCode = ToolRunner.run(new org.apache.hadoop.conf.Configuration(), new GbinCat(), args);
         System.exit(exitCode);
     }
 }

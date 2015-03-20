@@ -13,10 +13,10 @@ import java.util.List;
  */
 public abstract class GbinFileProcessor {
     private static final Logger logger = LoggerFactory.getLogger(GbinFileProcessor.class);
-    private final GbinCatConf config;
+    private final Configuration config;
     private OutputTuple outputTuple;
 
-    public GbinFileProcessor(GbinCatConf config, OutputTuple outputTuple) {
+    public GbinFileProcessor(Configuration config, OutputTuple outputTuple) {
         this.config = config;
         this.outputTuple = outputTuple;
     }
@@ -39,7 +39,7 @@ public abstract class GbinFileProcessor {
             logger.trace("Ecriture de {}", outputTuple);
             writer.writeNext(outputTuple.asArray());
             ++nbProcessedObjects;
-            if (nbProcessedObjects >= config.getNbObjects()) {
+            if (nbProcessedObjects >= config.getNumberOfObjectsToProcess()) {
                 break;
             }
         }
@@ -47,7 +47,7 @@ public abstract class GbinFileProcessor {
     }
 
     protected List<String> getProjection() {
-        return config.getProjection();
+        return config.getAttributesToProject();
     }
 
     abstract protected Class getSourceClass();
