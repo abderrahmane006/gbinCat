@@ -12,9 +12,6 @@ import java.nio.file.Path;
 
 /**
  * Lit et charge un fichier gbin.
- *
- * @author hal
- * @version dec. 2014
  */
 public class GbinLoader<V> {
 	/**

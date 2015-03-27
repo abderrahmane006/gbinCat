@@ -148,8 +148,8 @@ public final class GbinCat extends Configured implements Tool {
      * @param exitCode le code de sortie du programme
      */
     private void logDisplayAndExit(Exception e, String msg, ExitCode exitCode) {
-        logger.error("{} : {}", msg, e.getMessage());
-        System.err.println(msg + " : " + e.getMessage());
+        logger.error("{} : {}", msg, e);
+        System.err.println(msg + " : " + e);
         System.exit(exitCode.value);
     }
 
