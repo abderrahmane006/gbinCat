@@ -90,7 +90,8 @@ public final class GbinCat extends Configured implements Tool {
         } else {
             assert false;
         }
-        return gbinFileProcessor;
+        //return gbinFileProcessor;
+        return new GbinNashornFileProcessor(config, outputTuple);
     }
 
     private CSVWriter openOutputFile() {
