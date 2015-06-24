@@ -6,6 +6,7 @@ package adam.gaia.gbincat;
 // http://commons.apache.org/proper/commons-cli/usage.html / http://commons.apache.org/proper/commons-cli/properties.html
 // https://github.com/alexholmes/hdfs-file-slurper/blob/master/src/main/java/com/alexholmes/hdfsslurper/Slurper.java
 
+import adam.gaia.gbin.GbinFileDescriptor;
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
@@ -50,12 +51,14 @@ public final class GbinCat extends Configured implements Tool {
     public static enum GbinType { IGSL, GOG; }
 
     private Configuration config;
+    private GbinFileDescriptor metadata;
     private OutputTuple outputTuple;
 
     @Override
     public int run(final String... args) throws Exception {
         logger.info("Début de l'exécution");
         parseCommandLineAndConfigure(args);
+        extractGbinMetadata();
         CSVWriter writer = openOutputFile();
         GbinFileProcessor gbinFileProcessor = getGbinFileProcessor();
         GbinFinderAndProcessor gbinFinderAndProcessor = new GbinFinderAndProcessor(config, gbinFileProcessor, writer);
@@ -75,6 +78,25 @@ public final class GbinCat extends Configured implements Tool {
         }
         logger.trace(config.toString());
         outputTuple = new OutputTuple(config.getAttributesToProject().size());
+    }
+
+    private void extractGbinMetadata() {
+        logger.info("Extraction des métadonnées des fichiers");
+        MetadataExtractor metadataExtractor = new MetadataExtractor();
+        try {
+            Files.walkFileTree(config.getInputPath(), metadataExtractor);
+        } catch (IOException e) {
+            logDisplayAndExit(e, "Erreur d'E/S lors de l'accès aux fichiers gbin", GBIN_ACCESS);
+        }
+        if (metadataExtractor.getExceptionDuringProcessing() != null) {
+            logDisplayAndExit(metadataExtractor.getExceptionDuringProcessing(),
+                    "Erreur d'E/S lors de l'extraction des métadonnées des fichiers gbin", GBIN_ACCESS);
+        }
+        metadata = metadataExtractor.getMetadata();
+        if (metadata == null) {
+            logDisplayAndExit(null,
+                    "Erreur lors de l'extraction des métadonnées des fichiers gbin", GBIN_ACCESS);
+        }
     }
 
     private GbinFileProcessor getGbinFileProcessor() {
