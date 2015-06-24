@@ -1,10 +1,6 @@
 package adam.gaia.gbincat;
 
-import adam.gaia.gbin.GOGDescriptor;
-import adam.gaia.gbin.IGSLDescriptor;
-
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -35,16 +31,6 @@ public class Configuration {
         return numberOfObjectsToProcess;
     }
     public List<String> getAttributesToProject() {
-        //TODO à reprendre
-        if (attributesToProject.equals(Collections.singletonList("*"))) {
-            if (getFiletype() == GbinCat.GbinType.GOG) {
-                attributesToProject = GOGDescriptor.getAttributesAsList();
-            } else if (getFiletype() == GbinCat.GbinType.IGSL) {
-                attributesToProject = IGSLDescriptor.getAttributesAsList();
-            } else {
-                assert false;
-            }
-        }
         return attributesToProject;
     }
     public GbinCat.GbinType getFiletype() { return filetype; }

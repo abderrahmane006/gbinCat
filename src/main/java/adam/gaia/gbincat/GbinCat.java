@@ -59,10 +59,9 @@ public final class GbinCat extends Configured implements Tool {
         logger.info("Début de l'exécution");
         parseCommandLineAndConfigure(args);
         extractGbinMetadata();
-        logDisplayAndExit(null,
-                "FIN", GBIN_ACCESS);
+        ElementAccessScript script = new ElementAccessScript(config, metadata);
+        GbinFileProcessor gbinFileProcessor = getGbinFileProcessor(script);
         CSVWriter writer = openOutputFile();
-        GbinFileProcessor gbinFileProcessor = getGbinFileProcessor();
         GbinFinderAndProcessor gbinFinderAndProcessor = new GbinFinderAndProcessor(config, gbinFileProcessor, writer);
         executeProcessing(gbinFinderAndProcessor, writer);
         logger.info("Fin de l'exécution");
@@ -102,7 +101,7 @@ public final class GbinCat extends Configured implements Tool {
         logger.trace(metadata.toString());
     }
 
-    private GbinFileProcessor getGbinFileProcessor() {
+    private GbinFileProcessor getGbinFileProcessor(ElementAccessScript script) {
         //TODO utiliser le pattern abstract factory
         //TODO créer une méthode isIGSL
         GbinFileProcessor gbinFileProcessor = null;
@@ -116,7 +115,7 @@ public final class GbinCat extends Configured implements Tool {
             assert false;
         }
         //return gbinFileProcessor;
-        return new GbinNashornFileProcessor(config, outputTuple);
+        return new GbinNashornFileProcessor(config, outputTuple, script);
     }
 
     private CSVWriter openOutputFile() {

@@ -14,16 +14,14 @@ import javax.script.ScriptEngineManager;
 public class GbinNashornFileProcessor extends GbinFileProcessor {
     private static final Logger logger = LoggerFactory.getLogger(GbinNashornFileProcessor.class);
 
-    private String script = "" +
-            "print(\"objet : \" + data.getAlpha() + \" \" + data.getDelta());" +
-            "buffer.setAttribute(0, data.getAlpha());" +
-            "buffer.setAttribute(1, data.getDelta());";
+    private ElementAccessScript script;
     private ScriptEngine engine;
 
-    public GbinNashornFileProcessor(Configuration config, OutputTuple outputTuple) {
+    public GbinNashornFileProcessor(Configuration config, OutputTuple outputTuple, ElementAccessScript script) {
         super(config, outputTuple);
         ScriptEngineManager manager = new ScriptEngineManager();
         engine = manager.getEngineByName("nashorn");
+        this.script = script;
     }
 
     @Override
@@ -37,6 +35,6 @@ public class GbinNashornFileProcessor extends GbinFileProcessor {
         logger.trace("Traitement de {}, {}", gogData.getAlpha(), gogData.getDelta());
         engine.put("data", o);
         engine.put("buffer", outputTuple);
-        engine.eval(script);
+        engine.eval(script.toString());
     }
 }
