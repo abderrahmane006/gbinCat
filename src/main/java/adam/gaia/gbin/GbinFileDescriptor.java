@@ -12,12 +12,12 @@ import gaia.cu1.tools.util.props.PropertyLoader;
 import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static gaia.cu1.tools.dal.table.GaiaTable.DataType;
 import static gaia.cu1.tools.dal.table.GaiaTable.DataType.*;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * extrait et stocke les métadonnées d'un fichier gbin.
@@ -28,8 +28,7 @@ public class GbinFileDescriptor {
     private int versionNumber;
     private Long numberOfObjects;
     private String objectType;
-    private String attributesAsString;
-    private List<String> attributes;
+    private List<Map.Entry<String, DataType>> attributes;
 
     public GbinFileDescriptor(Path path) throws Exception {
         PropertyLoader.load();
@@ -65,22 +64,19 @@ public class GbinFileDescriptor {
         try {
             gt = store.getFile(fullPath, basename);
             GaiaTableHeader tableHeader = gt.getHeader();
-            attributesAsString = tableHeader.toString();
-            filterAttributes(tableHeader);
+            loadAttributes(tableHeader);
         } finally {
             gt.close();
         }
     }
 
-    private void filterAttributes(GaiaTableHeader tableHeader) {
-        attributes = new ArrayList<>();
-        List<String> fullList = tableHeader.getColumnNames();
+    private void loadAttributes(GaiaTableHeader tableHeader) {
+        List<String> names = tableHeader.getColumnNames();
         List<DataType> types = tableHeader.getColumnTypes();
-        for (int i = 0; i < fullList.size(); ++i) {
-            String element = fullList.get(i);
-            if (Arrays.asList(SUPPORTED_TYPES).contains(types.get(i))) {
-                attributes.add(element);
-            }
+        attributes = new ArrayList<>();
+        for (int i = 0; i < names.size(); ++i) {
+            Map.Entry<String, DataType> element = new AbstractMap.SimpleImmutableEntry<>(names.get(i), types.get(i));
+            attributes.add(element);
         }
     }
 
@@ -96,11 +92,13 @@ public class GbinFileDescriptor {
         return objectType;
     }
 
-    public String getAttributesAsString() {
-        return attributesAsString;
+    public List<Map.Entry<String, DataType>> getAttributes() {
+        return unmodifiableList(attributes);
     }
 
-    public List<String> getAttributes() {
-        return attributes;
+    public List<Map.Entry<String, DataType>> getSupportedAttributes() {
+        return attributes.stream()
+                .filter(e -> Arrays.asList(SUPPORTED_TYPES).contains(e.getValue()))
+                .collect(Collectors.toList());
     }
 }

@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+//TODO modifier cette classe pour en faire un outil de documentation des gbin (utiliser GbinFileDescriptor)
+
 /**
  * Affiche les informations extraites du fichier gbin.
  */
