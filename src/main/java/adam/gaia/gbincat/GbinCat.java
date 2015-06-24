@@ -59,6 +59,8 @@ public final class GbinCat extends Configured implements Tool {
         logger.info("Début de l'exécution");
         parseCommandLineAndConfigure(args);
         extractGbinMetadata();
+        logDisplayAndExit(null,
+                "FIN", GBIN_ACCESS);
         CSVWriter writer = openOutputFile();
         GbinFileProcessor gbinFileProcessor = getGbinFileProcessor();
         GbinFinderAndProcessor gbinFinderAndProcessor = new GbinFinderAndProcessor(config, gbinFileProcessor, writer);
@@ -97,6 +99,7 @@ public final class GbinCat extends Configured implements Tool {
             logDisplayAndExit(null,
                     "Erreur lors de l'extraction des métadonnées des fichiers gbin", GBIN_ACCESS);
         }
+        logger.trace(metadata.toString());
     }
 
     private GbinFileProcessor getGbinFileProcessor() {

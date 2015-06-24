@@ -101,4 +101,14 @@ public class GbinFileDescriptor {
                 .filter(e -> Arrays.asList(SUPPORTED_TYPES).contains(e.getValue()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public String toString() {
+        return "GbinFileDescriptor{" +
+                "versionNumber=" + versionNumber +
+                ", numberOfObjects=" + numberOfObjects +
+                ", objectType='" + objectType + '\'' +
+                ", attributes=" + attributes +
+                '}';
+    }
 }
