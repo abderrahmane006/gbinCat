@@ -51,6 +51,6 @@ public abstract class GbinFileProcessor {
         return config.getAttributesToProject();
     }
 
-    abstract protected Class getSourceClass();
+    abstract protected Class getSourceClass() throws ClassNotFoundException;
     abstract protected void extractGbinObject(final Object o, OutputTuple outputTuple) throws Exception;
 }

@@ -92,6 +92,16 @@ public class GbinFileDescriptor {
         return objectType;
     }
 
+    public Class getDefinitionClass() throws ClassNotFoundException {
+        return Class.forName(getDefinitionClassName());
+    }
+
+    private String getDefinitionClassName() {
+        String className = objectType.replace(".dmimpl.", ".dm.");
+        className = className.replace("Impl", "");
+        return className;
+    }
+
     public List<Map.Entry<String, DataType>> getAttributes() {
         return unmodifiableList(attributes);
     }
@@ -107,7 +117,7 @@ public class GbinFileDescriptor {
         return "GbinFileDescriptor{" +
                 "versionNumber=" + versionNumber +
                 ", numberOfObjects=" + numberOfObjects +
-                ", objectType='" + objectType + '\'' +
+                ", objectType(definitionClass)='" + objectType + "(" + getDefinitionClassName() + ")'" +
                 ", attributes=" + attributes +
                 '}';
     }
