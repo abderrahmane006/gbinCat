@@ -15,8 +15,6 @@ public class CommandLineParser {
     public static final String NB_OBJECTS_OPT = "n";
     public static final String PROJECTION_OPT = "p";
     public static final String OUTFILE_OPT = "o";
-    public static final String GOG_OPT = "gog";
-    public static final String IGSL_OPT = "igsl";
 
     public static final String NB_OBJECTS_DEFAULT = "-1";
     public static final String PROJECTION_DEFAULT = "*";
@@ -47,8 +45,6 @@ public class CommandLineParser {
                         .isRequired()
                         .withDescription("fichier de sortie")
                         .create(OUTFILE_OPT));
-        options.addOption(IGSL_OPT, false, "contenu au format IGSL");
-        options.addOption(GOG_OPT, false, "contenu au format GOG");
     }
 
     public Configuration parse(String... args) throws ParseException {
@@ -58,7 +54,6 @@ public class CommandLineParser {
                 .outputFile(extractOutputFilePathFrom(commandLine))
                 .numberOfObjectsToProcess(extractNumberOfObjectsToProcessFrom(commandLine))
                 .attributesToProject(extractAttributesToProjectFrom(commandLine))
-                .filetype(extractFiletypeFrom(commandLine))
                 .build();
     }
 
@@ -102,18 +97,6 @@ public class CommandLineParser {
 
     private List<String> extractAttributesToProjectFrom(CommandLine commandLine) {
         return Arrays.asList(commandLine.getOptionValue(PROJECTION_OPT, PROJECTION_DEFAULT).split(PROJECTION_SEP));
-    }
-
-    private GbinCat.GbinType extractFiletypeFrom(CommandLine commandLine) throws MissingOptionException {
-        GbinCat.GbinType gbinType = null;
-        if (commandLine.hasOption(IGSL_OPT)) {
-            gbinType = GbinCat.GbinType.IGSL;
-        } else if (commandLine.hasOption(GOG_OPT)) {
-            gbinType = GbinCat.GbinType.GOG;
-        } else {
-            throw new MissingOptionException("le type de fichier doit être précisé (igsl ou gog)");
-        }
-        return gbinType;
     }
 
     /**

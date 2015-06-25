@@ -14,14 +14,12 @@ public class Configuration {
     private Path outputFile;
     private long numberOfObjectsToProcess;
     private List<String> attributesToProject;
-    private GbinCat.GbinType filetype;
 
     private Configuration(ConfigurationBuilder builder) {
         this.inputPath = builder.inputPath;
         this.outputFile = builder.outputFile;
         this.numberOfObjectsToProcess = builder.numberOfObjectsToProcess;
         this.attributesToProject = builder.attributesToProject;
-        this.filetype = builder.filetype;
     }
 
     public Path getInputPath() {
@@ -37,7 +35,6 @@ public class Configuration {
         return attributesToProject;
     }
     public boolean isAllAttributes() { return attributesToProject.equals(ALL_ATTRIBUTES); }
-    public GbinCat.GbinType getFiletype() { return filetype; }
 
     @Override
     public String toString() {
@@ -46,7 +43,6 @@ public class Configuration {
                 ", outFile=" + outputFile +
                 ", nbObjects=" + numberOfObjectsToProcess +
                 ", projectionList=" + attributesToProject +
-                ", gbinType=" + filetype +
                 '}';
     }
 
@@ -55,7 +51,6 @@ public class Configuration {
         private Path outputFile;
         private long numberOfObjectsToProcess;
         private List<String> attributesToProject;
-        private GbinCat.GbinType filetype;
 
         public ConfigurationBuilder inputPath(Path inputPath) {
             this.inputPath = inputPath;
@@ -74,11 +69,6 @@ public class Configuration {
 
         public ConfigurationBuilder attributesToProject(List<String> attributesToProject) {
             this.attributesToProject = attributesToProject;
-            return this;
-        }
-
-        public ConfigurationBuilder filetype(GbinCat.GbinType filetype) {
-            this.filetype = filetype;
             return this;
         }
 

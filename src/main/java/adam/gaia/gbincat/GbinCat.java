@@ -60,7 +60,7 @@ public final class GbinCat extends Configured implements Tool {
         parseCommandLineAndConfigure(args);
         extractGbinMetadata();
         ElementAccessScript script = new ElementAccessScript(config, metadata);
-        GbinFileProcessor gbinFileProcessor = getGbinFileProcessor(script);
+        GbinFileProcessor gbinFileProcessor = new GbinNashornFileProcessor(config, metadata, outputTuple, script);
         CSVWriter writer = openOutputFile();
         GbinFinderAndProcessor gbinFinderAndProcessor = new GbinFinderAndProcessor(config, gbinFileProcessor, writer);
         executeProcessing(gbinFinderAndProcessor, writer);
@@ -101,23 +101,6 @@ public final class GbinCat extends Configured implements Tool {
         outputTuple = new OutputTuple(
                 config.isAllAttributes() ? metadata.getSupportedAttributes().size()
                         : config.getAttributesToProject().size());
-    }
-
-    private GbinFileProcessor getGbinFileProcessor(ElementAccessScript script) {
-        //TODO utiliser le pattern abstract factory
-        //TODO créer une méthode isIGSL
-        GbinFileProcessor gbinFileProcessor = null;
-        if (config.getFiletype() == GbinType.IGSL) {
-            logger.info("Création d'un FileProcessor de type IGSL");
-            gbinFileProcessor = new GbinIGSLFileProcessor(config, outputTuple);
-        } else if (config.getFiletype() == GbinType.GOG) {
-            logger.info("Création d'un FileProcessor de type GOG");
-            gbinFileProcessor = new GbinGOGFileProcessor(config, outputTuple);
-        } else {
-            assert false;
-        }
-        //return gbinFileProcessor;
-        return new GbinNashornFileProcessor(config, metadata, outputTuple, script);
     }
 
     private CSVWriter openOutputFile() {
