@@ -13,21 +13,14 @@ import javax.script.ScriptEngineManager;
 public class GbinNashornFileProcessor extends GbinFileProcessor {
     private static final Logger logger = LoggerFactory.getLogger(GbinNashornFileProcessor.class);
 
-    private GbinFileDescriptor metadata;
     private ElementAccessScript script;
     private ScriptEngine engine;
 
     public GbinNashornFileProcessor(Configuration config, GbinFileDescriptor metadata, OutputTuple outputTuple, ElementAccessScript script) {
-        super(config, outputTuple);
+        super(config, outputTuple, metadata);
         ScriptEngineManager manager = new ScriptEngineManager();
         engine = manager.getEngineByName("nashorn");
-        this.metadata = metadata;
         this.script = script;
-    }
-
-    @Override
-    protected Class getSourceClass() throws ClassNotFoundException {
-        return metadata.getDefinitionClass();
     }
 
     @Override
