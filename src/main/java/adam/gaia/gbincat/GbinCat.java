@@ -1,6 +1,6 @@
 package adam.gaia.gbincat;
 
-// Où placer les config du logger ? (http://maven.apache.org/plugins/maven-resources-plugin/)
+//TODO Où placer les config du logger ? (http://maven.apache.org/plugins/maven-resources-plugin/)
 // http://www.javacodegeeks.com/2012/04/using-slf4j-with-logback-tutorial.html
 // http://www.slf4j.org/ / http://logback.qos.ch/documentation.html
 // http://commons.apache.org/proper/commons-cli/usage.html / http://commons.apache.org/proper/commons-cli/properties.html
@@ -23,16 +23,13 @@ import java.nio.file.Files;
 
 import static adam.gaia.gbincat.GbinCat.ExitCode.*;
 
-// WARNING : l'import ci-dessous de IgslSource ne permet pas de lire les fichiers
-// import gaia.cu9.operations.auxiliarydata.igsl.dm.IgslSource;
-
 /**
  * Charge un ensemble de fichiers gbin dans un fichier stocké dans HDFS.
  */
 public final class GbinCat extends Configured implements Tool {
     private static final Logger logger = LoggerFactory.getLogger(GbinCat.class);
 
-    public static enum ExitCode {
+    public enum ExitCode {
         NO_ERROR(0),
         /** Erreur d'analyse de la ligne de commande. */
         PARSE_ERROR(1),
@@ -43,7 +40,7 @@ public final class GbinCat extends Configured implements Tool {
 
         private int value;
 
-        private ExitCode(int value) {
+        ExitCode(int value) {
             this.value = value;
         }
     }
