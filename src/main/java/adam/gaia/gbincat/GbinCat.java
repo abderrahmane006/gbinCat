@@ -54,6 +54,7 @@ public final class GbinCat extends Configured implements Tool {
         logger.info("Début de l'exécution");
         parseCommandLineAndConfigure(args);
         extractGbinMetadata();
+        createOutputBuffer();
         ElementAccessScript script = new ElementAccessScript(config, metadata);
         GbinFileProcessor gbinFileProcessor = new GbinNashornFileProcessor(config, metadata, outputTuple, script);
         CSVWriter writer = openOutputFile();
@@ -93,9 +94,13 @@ public final class GbinCat extends Configured implements Tool {
                     "Erreur lors de l'extraction des métadonnées des fichiers gbin", GBIN_ACCESS);
         }
         logger.trace(metadata.toString());
-        outputTuple = new OutputTuple(
-                config.isAllAttributes() ? metadata.getSupportedAttributes().size()
-                        : config.getAttributesToProject().size());
+    }
+
+    private void createOutputBuffer() {
+        int numberOfAttributes = config.isAllAttributes() ? metadata.getSupportedAttributes().size()
+                : config.getAttributesToProject().size();
+        logger.info("Création d'un buffer de sortie pour {} attributs", numberOfAttributes);
+        outputTuple = new OutputTuple(numberOfAttributes);
     }
 
     private CSVWriter openOutputFile() {
