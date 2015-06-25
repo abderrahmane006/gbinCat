@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
 public class ElementAccessScript {
     private static final Logger logger = LoggerFactory.getLogger(ElementAccessScript.class);
 
-    private static final List<String> JOKER_LIST = Collections.singletonList("*");
-
     private Configuration config;
     private GbinFileDescriptor metadata;
     private String script;
@@ -34,7 +32,7 @@ public class ElementAccessScript {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
         List<String> expectedAttributes = config.getAttributesToProject();
-        if (expectedAttributes.equals(JOKER_LIST)) {
+        if (config.isAllAttributes()) {
             expectedAttributes = supportedAttributes;
         }
         for (int i = 0; i < expectedAttributes.size(); ++i) {

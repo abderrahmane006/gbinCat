@@ -1,12 +1,15 @@
 package adam.gaia.gbincat;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Analyse la ligne de commande et configure gbinCat.
  */
 public class Configuration {
+    private static final List<String> ALL_ATTRIBUTES = Collections.singletonList("*");
+
     private Path inputPath;
     private Path outputFile;
     private long numberOfObjectsToProcess;
@@ -33,6 +36,7 @@ public class Configuration {
     public List<String> getAttributesToProject() {
         return attributesToProject;
     }
+    public boolean isAllAttributes() { return attributesToProject.equals(ALL_ATTRIBUTES); }
     public GbinCat.GbinType getFiletype() { return filetype; }
 
     @Override
