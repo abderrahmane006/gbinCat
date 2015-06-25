@@ -78,7 +78,6 @@ public final class GbinCat extends Configured implements Tool {
             logDisplayAndExit(e, "Echec de l'analyse de la ligne de commande", PARSE_ERROR);
         }
         logger.trace(config.toString());
-        outputTuple = new OutputTuple(config.getAttributesToProject().size());
     }
 
     private void extractGbinMetadata() {
@@ -99,6 +98,9 @@ public final class GbinCat extends Configured implements Tool {
                     "Erreur lors de l'extraction des métadonnées des fichiers gbin", GBIN_ACCESS);
         }
         logger.trace(metadata.toString());
+        outputTuple = new OutputTuple(
+                config.isAllAttributes() ? metadata.getSupportedAttributes().size()
+                        : config.getAttributesToProject().size());
     }
 
     private GbinFileProcessor getGbinFileProcessor(ElementAccessScript script) {
