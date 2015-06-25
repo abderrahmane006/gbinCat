@@ -30,13 +30,13 @@ public class GbinFileDescriptor {
     private String objectType;
     private List<Map.Entry<String, DataType>> attributes;
 
-    public GbinFileDescriptor(Path path) throws Exception {
+    public GbinFileDescriptor(Path path) throws GbinException, GaiaException {
         PropertyLoader.load();
         loadMetadata(path);
         loadTableHeader(path);
     }
 
-    private void loadMetadata(Path path) throws Exception {
+    private void loadMetadata(Path path) throws GbinException, GaiaException {
         try (GbinReader<GaiaRoot> reader = GbinFactory.getGbinReader(path.toFile())) {
             GbinMetaData metaData = reader.getGbinMetaData();
             versionNumber = metaData.getGbinVersionNumber();
@@ -44,11 +44,11 @@ public class GbinFileDescriptor {
 
             List<GbinMetaData.ChunkMetaData> chunks = metaData.getChunkList();
             if (chunks.size() != 1) {
-                throw new Exception("Seuls les fichiers gbin ne comportant qu'un partie sont supportés.");
+                throw new GbinException("Seuls les fichiers gbin ne comportant qu'un partie sont supportés.");
             }
             GbinMetaData.ChunkMetaData chunk = chunks.get(0);
             if (chunk.numElements != numberOfObjects) {
-                throw new Exception("Le nombre d'éléments de la partie du fichier (" + chunk.numElements +
+                throw new GbinException("Le nombre d'éléments de la partie du fichier (" + chunk.numElements +
                         ") n'est pas égal au nombre total d'éléments (" + numberOfObjects + ").");
             }
             objectType = chunk.className;
@@ -66,7 +66,7 @@ public class GbinFileDescriptor {
             GaiaTableHeader tableHeader = gt.getHeader();
             loadAttributes(tableHeader);
         } finally {
-            gt.close();
+            if (gt != null) gt.close();
         }
     }
 

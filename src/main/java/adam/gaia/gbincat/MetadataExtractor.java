@@ -1,6 +1,8 @@
 package adam.gaia.gbincat;
 
+import adam.gaia.gbin.GbinException;
 import adam.gaia.gbin.GbinFileDescriptor;
+import gaia.cu1.tools.exception.GaiaException;
 
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -45,7 +47,7 @@ public class MetadataExtractor extends SimpleFileVisitor<Path> {
         return exceptionDuringProcessing;
     }
 
-    private FileVisitResult processIfPatternMatches(Path file) throws Exception {
+    private FileVisitResult processIfPatternMatches(Path file) throws GaiaException, GbinException {
         if (isGbinFile(file.getFileName())) {
             metadata = new GbinFileDescriptor(file);
             return TERMINATE;
