@@ -45,8 +45,6 @@ public final class GbinCat extends Configured implements Tool {
         }
     }
 
-    public static enum GbinType { IGSL, GOG; }
-
     private Configuration config;
     private GbinFileDescriptor metadata;
     private OutputTuple outputTuple;
